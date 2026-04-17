@@ -1,0 +1,29 @@
+# macOS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# logs
+*.log
+log/
+
+# env files
+.env
+.env.*
+!.env.example
+
+# frontend
+frontend/node_modules/
+frontend/dist/
+
+# backend
+backend/.bundle/
+backend/log/*
+backend/tmp/*
+backend/storage/*
+backend/vendor/bundle/
+backend/node_modules/
+
+# sqlite leftovers
+backend/db/*.sqlite3
+backend/db/*.sqlite3-*
