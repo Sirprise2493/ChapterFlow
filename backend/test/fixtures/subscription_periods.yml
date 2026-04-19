@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  subscription: one
+  user: one
+  plan: one
+  period_start: 2026-04-19 20:31:44
+  period_end: 2026-04-19 20:31:44
+  price_cents_snapshot: 1
+  currency_snapshot: MyString
+  monthly_chapter_limit_snapshot: 1
+  author_payout_share_snapshot: 9.99
+  per_chapter_payout_cents: 9.99
+  chapters_read_count: 1
+
+two:
+  subscription: two
+  user: two
+  plan: two
+  period_start: 2026-04-19 20:31:44
+  period_end: 2026-04-19 20:31:44
+  price_cents_snapshot: 1
+  currency_snapshot: MyString
+  monthly_chapter_limit_snapshot: 1
+  author_payout_share_snapshot: 9.99
+  per_chapter_payout_cents: 9.99
+  chapters_read_count: 1

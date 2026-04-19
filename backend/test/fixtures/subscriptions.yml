@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  plan: one
+  status: 1
+  chapters_read_current_period: 1
+  started_at: 2026-04-19 20:28:22
+  current_period_start: 2026-04-19 20:28:22
+  current_period_end: 2026-04-19 20:28:22
+  canceled_at: 2026-04-19 20:28:22
+
+two:
+  user: two
+  plan: two
+  status: 1
+  chapters_read_current_period: 1
+  started_at: 2026-04-19 20:28:22
+  current_period_start: 2026-04-19 20:28:22
+  current_period_end: 2026-04-19 20:28:22
+  canceled_at: 2026-04-19 20:28:22

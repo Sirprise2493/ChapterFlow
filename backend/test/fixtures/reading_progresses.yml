@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  work: one
+  last_chapter_id: 
+  last_read_at: 2026-04-19 20:31:42
+
+two:
+  user: two
+  work: two
+  last_chapter_id: 
+  last_read_at: 2026-04-19 20:31:42

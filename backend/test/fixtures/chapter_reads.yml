@@ -1,0 +1,25 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  chapter: one
+  work: one
+  author: one
+  subscription: one
+  subscription_period: one
+  read_at: 2026-04-19 20:31:46
+  counted_in_quota: false
+  counted_for_payout: false
+  payout_cents: 9.99
+
+two:
+  user: two
+  chapter: two
+  work: two
+  author: two
+  subscription: two
+  subscription_period: two
+  read_at: 2026-04-19 20:31:46
+  counted_in_quota: false
+  counted_for_payout: false
+  payout_cents: 9.99
