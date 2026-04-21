@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::API
   include ActionController::MimeResponds
+  include Devise::Controllers::Helpers
 
   before_action :configure_permitted_parameters, if: :devise_controller?
 

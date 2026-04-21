@@ -292,6 +292,7 @@ DEPENDENCIES
   debug
   devise
   devise-jwt
+  jwt
   ostruct
   pg (~> 1.1)
   pg_search
