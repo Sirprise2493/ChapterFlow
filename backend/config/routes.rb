@@ -1,11 +1,17 @@
 Rails.application.routes.draw do
-  namespace :api do
+  namespace :api, defaults: { format: :json } do
     namespace :v1 do
-      devise_scope :user do
-        post   'signup', to: 'users/registrations#create'
-        post   'login',  to: 'users/sessions#create'
-        delete 'logout', to: 'users/sessions#destroy'
-      end
+      devise_for :users,
+                 path: '',
+                 path_names: {
+                   sign_in: 'login',
+                   sign_out: 'logout',
+                   registration: 'signup'
+                 },
+                 controllers: {
+                   sessions: 'api/v1/users/sessions',
+                   registrations: 'api/v1/users/registrations'
+                 }
 
       get 'me', to: 'me#show'
       get 'home', to: 'home#index'

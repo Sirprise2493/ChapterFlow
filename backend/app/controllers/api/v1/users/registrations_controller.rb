@@ -1,34 +1,32 @@
 class Api::V1::Users::RegistrationsController < Devise::RegistrationsController
   respond_to :json
-  prepend_before_action :set_devise_mapping
 
-  private
+  def create
+    user = User.new(sign_up_params)
 
-  def set_devise_mapping
-    request.env['devise.mapping'] = Devise.mappings[:user]
-  end
+    if user.save
+      token = Warden::JWTAuth::UserEncoder.new.call(user, :user, nil).first
 
-  def sign_up(resource_name, resource)
-    sign_in(resource_name, resource, store: false)
-  end
+      response.set_header('Authorization', "Bearer #{token}")
 
-  def respond_with(resource, _opts = {})
-    if resource.persisted?
       render json: {
         message: 'Signed up successfully',
+        token: token,
         user: {
-          id: resource.id,
-          email: resource.email,
-          username: resource.username
+          id: user.id,
+          email: user.email,
+          username: user.username
         }
       }, status: :created
     else
       render json: {
         message: 'Sign up failed',
-        errors: resource.errors.full_messages
+        errors: user.errors.full_messages
       }, status: :unprocessable_entity
     end
   end
+
+  private
 
   def sign_up_params
     params.require(:user).permit(:email, :username, :password, :password_confirmation)

@@ -22,11 +22,11 @@ Devise.setup do |config|
 
   config.sign_out_via = :delete
 
-  config.responder.error_status = :unprocessable_content
+  config.responder.error_status = :unprocessable_entity
   config.responder.redirect_status = :see_other
 
   config.jwt do |jwt|
-    jwt.secret = Rails.application.credentials.devise_jwt_secret_key
+    jwt.secret = Rails.application.credentials.devise_jwt_secret_key!
     jwt.dispatch_requests = [
       ['POST', %r{^/api/v1/login$}],
       ['POST', %r{^/api/v1/signup$}]
@@ -34,6 +34,11 @@ Devise.setup do |config|
     jwt.revocation_requests = [
       ['DELETE', %r{^/api/v1/logout$}]
     ]
+
+    # Wichtig für API Requests auf geschützte Routen
+    jwt.request_formats = {
+      user: [nil, :json]
+    }
     jwt.expiration_time = 7.days.to_i
   end
 
