@@ -125,3 +125,56 @@ button:hover {
     grid-template-columns: 1fr;
   }
 }
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar-brand {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+  text-decoration: none;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.navbar-links a {
+  color: #4b5563;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.navbar-links a.active {
+  color: #111827;
+}
+
+.navbar-button {
+  padding: 8px 12px;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 700px) {
+  .navbar {
+    align-items: flex-start;
+    gap: 12px;
+    flex-direction: column;
+  }
+
+  .navbar-links {
+    flex-wrap: wrap;
+  }
+}

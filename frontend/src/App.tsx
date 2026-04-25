@@ -1,21 +1,19 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
-import { getMe, login, logout, signup } from "./lib/auth";
+
+import { getMe, logout } from "./lib/auth";
 import type { AuthUser } from "./lib/auth";
+
+import AppLayout from "./layouts/AppLayout";
+import HomePage from "./pages/HomePage";
+import AuthPage from "./pages/AuthPage";
 
 function App() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupUsername, setSignupUsername] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [signupPasswordConfirmation, setSignupPasswordConfirmation] = useState("");
 
   useEffect(() => {
     const loadCurrentUser = async () => {
@@ -37,42 +35,15 @@ function App() {
     setError("");
   };
 
-  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    clearFeedback();
-
-    try {
-      const result = await login(loginEmail, loginPassword);
-      setCurrentUser(result.user);
-      setMessage(result.message || "Login successful");
-      setLoginPassword("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
-    }
+  const handleAuthSuccess = (user: AuthUser, successMessage?: string) => {
+    setCurrentUser(user);
+    setMessage(successMessage || "Erfolgreich angemeldet");
+    setError("");
   };
 
-  const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    clearFeedback();
-
-    try {
-      const result = await signup(
-        signupEmail,
-        signupUsername,
-        signupPassword,
-        signupPasswordConfirmation
-      );
-
-      setCurrentUser(result.user);
-      setMessage(result.message || "Signup successful");
-
-      setSignupEmail("");
-      setSignupUsername("");
-      setSignupPassword("");
-      setSignupPasswordConfirmation("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Signup failed");
-    }
+  const handleError = (errorMessage: string) => {
+    setError(errorMessage);
+    setMessage("");
   };
 
   const handleLogout = async () => {
@@ -99,118 +70,71 @@ function App() {
   }
 
   return (
-    <main className="page">
-      <div className="hero">
-        <h1>ChapterFlow</h1>
-        <p>Sign In und Sign Up direkt auf der Startseite.</p>
-      </div>
+    <BrowserRouter>
+      <Routes>
+        <Route
+          element={
+            <AppLayout
+              isLoggedIn={Boolean(currentUser)}
+              onLogout={handleLogout}
+            />
+          }
+        >
+          <Route
+            path="/"
+            element={
+              <>
+                {message && <div className="feedback success">{message}</div>}
+                {error && <div className="feedback error">{error}</div>}
 
-      {message && <div className="feedback success">{message}</div>}
-      {error && <div className="feedback error">{error}</div>}
+                <HomePage currentUser={currentUser} />
+              </>
+            }
+          />
 
-      {currentUser ? (
-        <section className="card user-card">
-          <h2>Du bist eingeloggt</h2>
-          <div className="user-info">
-            <p>
-              <strong>ID:</strong> {currentUser.id}
-            </p>
-            <p>
-              <strong>Email:</strong> {currentUser.email}
-            </p>
-            <p>
-              <strong>Username:</strong> {currentUser.username}
-            </p>
-          </div>
+          <Route
+            path="/auth"
+            element={
+              <>
+                {message && <div className="feedback success">{message}</div>}
+                {error && <div className="feedback error">{error}</div>}
 
-          <div className="actions">
-            <button onClick={handleLogout}>Logout</button>
-          </div>
-        </section>
-      ) : (
-        <section className="grid">
-          <div className="card">
-            <h2>Sign In</h2>
-            <form onSubmit={handleLogin} className="form">
-              <label>
-                Email
-                <input
-                  type="email"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="reader@example.com"
-                  required
-                />
-              </label>
+                {currentUser ? (
+                  <Navigate to="/" replace />
+                ) : (
+                  <AuthPage
+                    onLoginSuccess={handleAuthSuccess}
+                    onSignupSuccess={handleAuthSuccess}
+                    onError={handleError}
+                    onClearFeedback={clearFeedback}
+                  />
+                )}
+              </>
+            }
+          />
 
-              <label>
-                Passwort
-                <input
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="password123"
-                  required
-                />
-              </label>
+          <Route
+            path="/works"
+            element={
+              <section className="card">
+                <h2>Works</h2>
+                <p>Hier kommen später deine Werke hin.</p>
+              </section>
+            }
+          />
 
-              <button type="submit">Einloggen</button>
-            </form>
-          </div>
-
-          <div className="card">
-            <h2>Sign Up</h2>
-            <form onSubmit={handleSignup} className="form">
-              <label>
-                Email
-                <input
-                  type="email"
-                  value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                  placeholder="newuser@example.com"
-                  required
-                />
-              </label>
-
-              <label>
-                Username
-                <input
-                  type="text"
-                  value={signupUsername}
-                  onChange={(e) => setSignupUsername(e.target.value)}
-                  placeholder="reader_one"
-                  required
-                />
-              </label>
-
-              <label>
-                Passwort
-                <input
-                  type="password"
-                  value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
-                  placeholder="password123"
-                  required
-                />
-              </label>
-
-              <label>
-                Passwort bestätigen
-                <input
-                  type="password"
-                  value={signupPasswordConfirmation}
-                  onChange={(e) => setSignupPasswordConfirmation(e.target.value)}
-                  placeholder="password123"
-                  required
-                />
-              </label>
-
-              <button type="submit">Registrieren</button>
-            </form>
-          </div>
-        </section>
-      )}
-    </main>
+          <Route
+            path="/library"
+            element={
+              <section className="card">
+                <h2>Library</h2>
+                <p>Hier kommt später deine Bibliothek hin.</p>
+              </section>
+            }
+          />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
