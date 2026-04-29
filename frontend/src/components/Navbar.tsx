@@ -17,6 +17,10 @@ function Navbar({ isLoggedIn, onLogout }: NavbarProps) {
         <NavLink to="/works">Works</NavLink>
         <NavLink to="/library">Library</NavLink>
 
+        {isLoggedIn && <NavLink to="/subscription">Abo</NavLink>}
+        {isLoggedIn && <NavLink to="/author/dashboard">Dashboard</NavLink>}
+        {isLoggedIn && <NavLink to="/author/works">Author</NavLink>}
+
         {isLoggedIn ? (
           <button type="button" onClick={onLogout} className="navbar-button">
             Logout

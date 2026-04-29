@@ -8,6 +8,15 @@ import type { AuthUser } from "./lib/auth";
 import AppLayout from "./layouts/AppLayout";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
+import WorkShowPage from "./pages/WorkShowPage";
+import ChapterShowPage from "./pages/ChapterShowPage";
+import LibraryPage from "./pages/LibraryPage";
+import AuthorWorksPage from "./pages/AuthorWorksPage";
+import AuthorWorkEditPage from "./pages/AuthorWorkEditPage";
+import SubscriptionPage from "./pages/SubscriptionPage";
+import AuthorDashboardPage from "./pages/AuthorDashboardPage";
+import WorksPage from "./pages/WorksPage";
+
 
 function App() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -113,24 +122,44 @@ function App() {
             }
           />
 
+
           <Route
-            path="/works"
-            element={
-              <section className="card">
-                <h2>Works</h2>
-                <p>Hier kommen später deine Werke hin.</p>
-              </section>
-            }
+            path="/chapters/:id"
+            element={<ChapterShowPage currentUser={currentUser} />}
+          />
+
+          <Route path="/works" element={<WorksPage />} />
+
+          <Route
+            path="/works/:slug"
+            element={<WorkShowPage currentUser={currentUser} />}
+          />
+
+          <Route
+            path="/author/works/:slug/edit"
+            element={<AuthorWorkEditPage currentUser={currentUser} />}
+          />
+
+          <Route
+            path="/subscription"
+            element={<SubscriptionPage currentUser={currentUser} />}
+          />
+
+          <Route
+            path="/author/dashboard"
+            element={<AuthorDashboardPage currentUser={currentUser} />}
+          />
+
+
+
+          <Route
+            path="/author/works"
+            element={<AuthorWorksPage currentUser={currentUser} />}
           />
 
           <Route
             path="/library"
-            element={
-              <section className="card">
-                <h2>Library</h2>
-                <p>Hier kommt später deine Bibliothek hin.</p>
-              </section>
-            }
+            element={<LibraryPage currentUser={currentUser} />}
           />
         </Route>
       </Routes>
