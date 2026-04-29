@@ -11,10 +11,13 @@ class Work < ApplicationRecord
   enum status: { ongoing: 0, completed: 1 }
   enum access_level: { free_access: 0, subscription_only: 1, paid_access: 2 }
 
+  validates :free_chapter_until,
+            numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+
   validates :title, presence: true
   validates :slug, presence: true, uniqueness: true
 
-  scope :published, -> { where.not(published_at: nil) }
+  scope :published, -> { where.not(published_at: nil).where("published_at <= ?", Time.current) }
   scope :latest, -> { order(published_at: :desc, created_at: :desc) }
   scope :best_rated, -> { order(rating_avg: :desc, rating_count: :desc) }
   scope :bestsellers, -> { order(views_count: :desc) }

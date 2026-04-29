@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_04_19_183202) do
+ActiveRecord::Schema[7.1].define(version: 2026_04_29_110021) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -215,6 +215,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_19_183202) do
     t.datetime "published_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "free_chapter_until", default: 0, null: false
     t.index ["author_id"], name: "index_works_on_author_id"
     t.index ["chapter_count"], name: "index_works_on_chapter_count"
     t.index ["published_at"], name: "index_works_on_published_at"

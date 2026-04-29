@@ -33,6 +33,7 @@ class Api::V1::WorksController < ApplicationController
 
   def show
     work = Work.includes(:author, :genres, :chapters).find_by!(slug: params[:id])
+    reading_progress = current_api_user&.reading_progresses&.includes(:last_chapter)&.find_by(work_id: work.id)
 
     render json: {
       id: work.id,
@@ -42,24 +43,40 @@ class Api::V1::WorksController < ApplicationController
       cover_picture: work.cover_picture,
       status: work.status,
       access_level: work.access_level,
+      free_chapter_until: work.free_chapter_until,
       rating_avg: work.rating_avg,
       rating_count: work.rating_count,
       chapter_count: work.chapter_count,
       views_count: work.views_count,
       published_at: work.published_at,
+      in_library: current_api_user ? current_api_user.user_libraries.exists?(work_id: work.id) : false,
+      reading_progress: reading_progress_payload(reading_progress),
       author: {
         id: work.author.id,
         username: work.author.username
       },
       genres: work.genres.map { |genre| { id: genre.id, name: genre.name } },
       chapters: work.chapters.order(:chapter_number).map do |chapter|
+        chapter_is_free = work.free_access? || chapter.chapter_number <= work.free_chapter_until
+
         {
           id: chapter.id,
           chapter_number: chapter.chapter_number,
-          title: chapter.title
+          title: chapter.title,
+          is_free: chapter_is_free,
+          requires_subscription: !chapter_is_free
         }
       end
     }
+  end
+
+  def view
+    work = Work.published.find_by!(slug: params[:id])
+    work.increment!(:views_count)
+
+    render json: {
+      views_count: work.views_count
+    }, status: :ok
   end
 
   private
@@ -72,6 +89,8 @@ class Api::V1::WorksController < ApplicationController
       description: work.description,
       cover_picture: work.cover_picture,
       status: work.status,
+      access_level: work.access_level,
+      free_chapter_until: work.free_chapter_until,
       rating_avg: work.rating_avg,
       rating_count: work.rating_count,
       chapter_count: work.chapter_count,
@@ -81,6 +100,20 @@ class Api::V1::WorksController < ApplicationController
         username: work.author.username
       },
       genres: work.genres.map { |genre| { id: genre.id, name: genre.name } }
+    }
+  end
+
+  def reading_progress_payload(progress)
+    return nil unless progress&.last_chapter
+
+    {
+      id: progress.id,
+      last_read_at: progress.last_read_at,
+      last_chapter: {
+        id: progress.last_chapter.id,
+        chapter_number: progress.last_chapter.chapter_number,
+        title: progress.last_chapter.title
+      }
     }
   end
 end

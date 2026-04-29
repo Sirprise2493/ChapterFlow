@@ -6,5 +6,5 @@ class AuthorEarning < ApplicationRecord
   belongs_to :work
   belongs_to :chapter
 
-  enum status: { pending: 0, paid: 1 }
+  enum status: { pending: 0, paid: 1, canceled: 2 }
 end

@@ -1,5 +1,3 @@
-# db/seeds.rb
-
 puts "Seeding started..."
 
 # Cleanup in sinnvoller Reihenfolge
@@ -35,13 +33,48 @@ author2 = User.create!(
   status: :active
 )
 
-reader = User.create!(
+reader_with_subscription = User.create!(
   email: "reader@example.com",
   username: "reader_one",
   password: "password123",
   password_confirmation: "password123",
   status: :active
 )
+
+reader_without_subscription = User.create!(
+  email: "reader_no_sub@example.com",
+  username: "reader_no_sub",
+  password: "password123",
+  password_confirmation: "password123",
+  status: :active
+)
+
+reader_at_limit = User.create!(
+  email: "reader_limit@example.com",
+  username: "reader_limit",
+  password: "password123",
+  password_confirmation: "password123",
+  status: :active
+)
+
+extra_readers = 8.times.map do |index|
+  User.create!(
+    email: "reader#{index + 2}@example.com",
+    username: "reader_#{index + 2}",
+    password: "password123",
+    password_confirmation: "password123",
+    status: :active
+  )
+end
+
+all_rating_users = [
+  reader_with_subscription,
+  reader_without_subscription,
+  reader_at_limit,
+  author1,
+  author2,
+  *extra_readers
+]
 
 # Genres
 fantasy = Genre.create!(name: "Fantasy")
@@ -51,9 +84,11 @@ drama = Genre.create!(name: "Drama")
 adventure = Genre.create!(name: "Adventure")
 system = Genre.create!(name: "System")
 reincarnation = Genre.create!(name: "Reincarnation")
+mystery = Genre.create!(name: "Mystery")
+comedy = Genre.create!(name: "Comedy")
 
 # Subscription Plan
-plan = SubscriptionPlan.create!(
+premium_plan = SubscriptionPlan.create!(
   name: "Premium Monthly",
   price_cents: 999,
   currency: "EUR",
@@ -63,28 +98,64 @@ plan = SubscriptionPlan.create!(
   author_payout_share: 0.8
 )
 
-subscription = Subscription.create!(
-  user: reader,
-  plan: plan,
+limited_plan = SubscriptionPlan.create!(
+  name: "Test Limit Plan",
+  price_cents: 999,
+  currency: "EUR",
+  billing_period: "monthly",
+  is_active: true,
+  monthly_chapter_limit: 3,
+  author_payout_share: 0.8
+)
+
+# Active subscription user
+active_subscription = Subscription.create!(
+  user: reader_with_subscription,
+  plan: premium_plan,
   status: :active,
-  chapters_read_current_period: 3,
+  chapters_read_current_period: 0,
   started_at: Time.current - 10.days,
   current_period_start: Time.current.beginning_of_month,
   current_period_end: Time.current.end_of_month
 )
 
-period = SubscriptionPeriod.create!(
-  subscription: subscription,
-  user: reader,
-  plan: plan,
+active_period = SubscriptionPeriod.create!(
+  subscription: active_subscription,
+  user: reader_with_subscription,
+  plan: premium_plan,
   period_start: Time.current.beginning_of_month,
   period_end: Time.current.end_of_month,
-  price_cents_snapshot: 999,
-  currency_snapshot: "EUR",
-  monthly_chapter_limit_snapshot: 1000,
-  author_payout_share_snapshot: 0.8,
+  price_cents_snapshot: premium_plan.price_cents,
+  currency_snapshot: premium_plan.currency,
+  monthly_chapter_limit_snapshot: premium_plan.monthly_chapter_limit,
+  author_payout_share_snapshot: premium_plan.author_payout_share,
   per_chapter_payout_cents: 0.7992,
-  chapters_read_count: 3
+  chapters_read_count: 0
+)
+
+# User already at limit
+limit_subscription = Subscription.create!(
+  user: reader_at_limit,
+  plan: limited_plan,
+  status: :active,
+  chapters_read_current_period: limited_plan.monthly_chapter_limit,
+  started_at: Time.current - 10.days,
+  current_period_start: Time.current.beginning_of_month,
+  current_period_end: Time.current.end_of_month
+)
+
+limit_period = SubscriptionPeriod.create!(
+  subscription: limit_subscription,
+  user: reader_at_limit,
+  plan: limited_plan,
+  period_start: Time.current.beginning_of_month,
+  period_end: Time.current.end_of_month,
+  price_cents_snapshot: limited_plan.price_cents,
+  currency_snapshot: limited_plan.currency,
+  monthly_chapter_limit_snapshot: limited_plan.monthly_chapter_limit,
+  author_payout_share_snapshot: limited_plan.author_payout_share,
+  per_chapter_payout_cents: 2.6640,
+  chapters_read_count: limited_plan.monthly_chapter_limit
 )
 
 works_data = [
@@ -93,11 +164,13 @@ works_data = [
     title: "The Last Arcane King",
     slug: "the-last-arcane-king",
     description: "A fallen mage king returns in a weaker body and rebuilds his power from nothing.",
-    cover_picture: "https://example.com/covers/arcane-king.jpg",
+    cover_picture: "https://picsum.photos/seed/arcane-king/600/900",
     status: :ongoing,
     access_level: :free_access,
-    views_count: 12000,
+    free_chapter_until: 0,
+    views_count: 12_000,
     published_at: 20.days.ago,
+    chapter_total: 12,
     genres: [fantasy, action, adventure, reincarnation]
   },
   {
@@ -105,11 +178,13 @@ works_data = [
     title: "Shadow System Hunter",
     slug: "shadow-system-hunter",
     description: "A boy gains access to a forbidden system that lets him steal skills from monsters.",
-    cover_picture: "https://example.com/covers/shadow-system-hunter.jpg",
+    cover_picture: "https://picsum.photos/seed/shadow-system-hunter/600/900",
     status: :ongoing,
     access_level: :subscription_only,
-    views_count: 22000,
+    free_chapter_until: 3,
+    views_count: 22_000,
     published_at: 15.days.ago,
+    chapter_total: 12,
     genres: [action, fantasy, system]
   },
   {
@@ -117,11 +192,13 @@ works_data = [
     title: "Reborn as the Tyrant's Healer",
     slug: "reborn-as-the-tyrants-healer",
     description: "She wakes up inside a tragic novel and becomes the healer of the future tyrant.",
-    cover_picture: "https://example.com/covers/tyrants-healer.jpg",
+    cover_picture: "https://picsum.photos/seed/tyrants-healer/600/900",
     status: :ongoing,
     access_level: :free_access,
-    views_count: 18000,
+    free_chapter_until: 0,
+    views_count: 18_000,
     published_at: 10.days.ago,
+    chapter_total: 10,
     genres: [romance, drama, fantasy, reincarnation]
   },
   {
@@ -129,11 +206,13 @@ works_data = [
     title: "The Hero Quit the Guild",
     slug: "the-hero-quit-the-guild",
     description: "After defeating the demon king, the hero abandons fame and starts over as an adventurer.",
-    cover_picture: "https://example.com/covers/hero-quit-the-guild.jpg",
+    cover_picture: "https://picsum.photos/seed/hero-quit-guild/600/900",
     status: :completed,
     access_level: :free_access,
-    views_count: 9000,
+    free_chapter_until: 0,
+    views_count: 9_000,
     published_at: 40.days.ago,
+    chapter_total: 9,
     genres: [adventure, action, fantasy]
   },
   {
@@ -141,11 +220,13 @@ works_data = [
     title: "My Quiet Life in the Demon Forest",
     slug: "my-quiet-life-in-the-demon-forest",
     description: "An overpowered recluse wants peace, but the world keeps dragging him into conflict.",
-    cover_picture: "https://example.com/covers/demon-forest.jpg",
+    cover_picture: "https://picsum.photos/seed/demon-forest/600/900",
     status: :ongoing,
     access_level: :subscription_only,
-    views_count: 14000,
+    free_chapter_until: 5,
+    views_count: 14_000,
     published_at: 5.days.ago,
+    chapter_total: 14,
     genres: [fantasy, adventure, drama]
   },
   {
@@ -153,12 +234,42 @@ works_data = [
     title: "Contract Marriage with the Ice Duke",
     slug: "contract-marriage-with-the-ice-duke",
     description: "A fake marriage turns complicated when political intrigue and real feelings collide.",
-    cover_picture: "https://example.com/covers/ice-duke.jpg",
+    cover_picture: "https://picsum.photos/seed/ice-duke/600/900",
     status: :completed,
     access_level: :free_access,
-    views_count: 30000,
+    free_chapter_until: 0,
+    views_count: 30_000,
     published_at: 30.days.ago,
+    chapter_total: 11,
     genres: [romance, drama]
+  },
+  {
+    author: author2,
+    title: "Clockwork Mystery Academy",
+    slug: "clockwork-mystery-academy",
+    description: "A young investigator enters an academy where every secret is powered by clockwork magic.",
+    cover_picture: "https://picsum.photos/seed/clockwork-academy/600/900",
+    status: :ongoing,
+    access_level: :subscription_only,
+    free_chapter_until: 2,
+    views_count: 7_500,
+    published_at: 3.days.ago,
+    chapter_total: 8,
+    genres: [mystery, fantasy, drama]
+  },
+  {
+    author: author1,
+    title: "The Villain Wants a Vacation",
+    slug: "the-villain-wants-a-vacation",
+    description: "A retired villain tries to live quietly, but heroes keep asking for rematches.",
+    cover_picture: "https://picsum.photos/seed/villain-vacation/600/900",
+    status: :ongoing,
+    access_level: :free_access,
+    free_chapter_until: 0,
+    views_count: 16_500,
+    published_at: 2.days.ago,
+    chapter_total: 10,
+    genres: [comedy, fantasy, action]
   }
 ]
 
@@ -171,6 +282,7 @@ created_works = works_data.map do |data|
     cover_picture: data[:cover_picture],
     status: data[:status],
     access_level: data[:access_level],
+    free_chapter_until: data[:free_chapter_until],
     rating_count: 0,
     rating_avg: nil,
     chapter_count: 0,
@@ -183,19 +295,21 @@ created_works = works_data.map do |data|
     WorkGenre.create!(work: work, genre: genre)
   end
 
-  chapter_total = rand(8..15)
+  data[:chapter_total].times do |index|
+    chapter_number = index + 1
 
-  chapter_total.times do |i|
     Chapter.create!(
       work: work,
-      chapter_number: i + 1,
-      title: "Chapter #{i + 1}",
+      chapter_number: chapter_number,
+      title: "Chapter #{chapter_number}",
       content: <<~TEXT,
-        This is the content of chapter #{i + 1} of "#{work.title}".
+        This is chapter #{chapter_number} of "#{work.title}".
 
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-        Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-        Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+        The story continues with new tension, new decisions, and a stronger sense of momentum.
+
+        This sample chapter exists so you can test reading progress, subscription access, chapter limits, and author payouts.
+
+        If this work is subscription-only, chapters after the free chapter limit should require an active subscription.
       TEXT
       is_monetizable: true
     )
@@ -205,71 +319,73 @@ created_works = works_data.map do |data|
   work
 end
 
-# Ratings
-ratings_data = [
-  [reader, created_works[0], 5],
-  [reader, created_works[1], 4],
-  [reader, created_works[2], 5],
-  [author1, created_works[2], 4],
-  [author2, created_works[0], 5],
-  [author2, created_works[4], 4],
-  [author1, created_works[5], 5]
-]
+# Ratings: mindestens 3 Ratings pro Work, damit Top-Listen funktionieren
+rating_patterns = {
+  "the-last-arcane-king" => [5, 5, 4, 5, 4, 5],
+  "shadow-system-hunter" => [5, 4, 4, 5, 5, 4],
+  "reborn-as-the-tyrants-healer" => [5, 5, 5, 4, 4],
+  "the-hero-quit-the-guild" => [4, 4, 5, 4],
+  "my-quiet-life-in-the-demon-forest" => [4, 5, 4, 4, 5],
+  "contract-marriage-with-the-ice-duke" => [5, 5, 4, 5, 5, 5],
+  "clockwork-mystery-academy" => [4, 4, 3, 5],
+  "the-villain-wants-a-vacation" => [5, 4, 5, 4, 5]
+}
 
-ratings_data.each do |user, work, score|
-  Rating.create!(user: user, work: work, score: score)
+created_works.each do |work|
+  scores = rating_patterns.fetch(work.slug)
+
+  scores.each_with_index do |score, index|
+    user = all_rating_users[index]
+
+    Rating.create!(
+      user: user,
+      work: work,
+      score: score
+    )
+  end
 end
 
 # Library
-UserLibrary.create!(user: reader, work: created_works[0], added_at: 3.days.ago)
-UserLibrary.create!(user: reader, work: created_works[1], added_at: 2.days.ago)
-UserLibrary.create!(user: reader, work: created_works[2], added_at: 1.day.ago)
+UserLibrary.create!(
+  user: reader_with_subscription,
+  work: created_works.find { |work| work.slug == "the-last-arcane-king" },
+  added_at: 3.days.ago
+)
 
-# Reading progress
-progress_work = created_works[0]
-progress_chapter = progress_work.chapters.find_by(chapter_number: 3)
+UserLibrary.create!(
+  user: reader_with_subscription,
+  work: created_works.find { |work| work.slug == "shadow-system-hunter" },
+  added_at: 2.days.ago
+)
+
+UserLibrary.create!(
+  user: reader_with_subscription,
+  work: created_works.find { |work| work.slug == "my-quiet-life-in-the-demon-forest" },
+  added_at: 1.day.ago
+)
+
+UserLibrary.create!(
+  user: reader_without_subscription,
+  work: created_works.find { |work| work.slug == "shadow-system-hunter" },
+  added_at: 1.day.ago
+)
+
+# Reading progress: nur ein freies Kapitel, damit ChapterRead/AuthorEarning sauber bei 0 starten können
+progress_work = created_works.find { |work| work.slug == "the-last-arcane-king" }
+progress_chapter = progress_work.chapters.find_by!(chapter_number: 3)
 
 ReadingProgress.create!(
-  user: reader,
+  user: reader_with_subscription,
   work: progress_work,
   last_chapter: progress_chapter,
   last_read_at: 2.hours.ago
 )
 
-# Chapter reads + author earnings
-read_chapters = created_works[1].chapters.order(:chapter_number).limit(3)
+# Comments
+sample_chapter = progress_work.chapters.first
 
-read_chapters.each do |chapter|
-  chapter_read = ChapterRead.create!(
-    user: reader,
-    chapter: chapter,
-    work: chapter.work,
-    author: chapter.work.author,
-    subscription: subscription,
-    subscription_period: period,
-    read_at: Time.current - rand(1..5).hours,
-    counted_in_quota: true,
-    counted_for_payout: true,
-    payout_cents: 0.7992
-  )
-
-  AuthorEarning.create!(
-    author: chapter.work.author,
-    reader_user: reader,
-    chapter_read: chapter_read,
-    subscription_period: period,
-    work: chapter.work,
-    chapter: chapter,
-    amount_cents: 0.7992,
-    currency: "EUR",
-    status: :pending
-  )
-end
-
-# Beispiel-Kommentare
-sample_chapter = created_works[0].chapters.first
 comment1 = Comment.create!(
-  user: reader,
+  user: reader_with_subscription,
   chapter: sample_chapter,
   content: "Really strong first chapter."
 )
@@ -289,5 +405,20 @@ puts "Chapters: #{Chapter.count}"
 puts "Ratings: #{Rating.count}"
 puts "Comments: #{Comment.count}"
 puts "Subscriptions: #{Subscription.count}"
+puts "SubscriptionPeriods: #{SubscriptionPeriod.count}"
 puts "ChapterReads: #{ChapterRead.count}"
 puts "AuthorEarnings: #{AuthorEarning.count}"
+
+puts ""
+puts "Login users:"
+puts "Author 1: author1@example.com / password123"
+puts "Author 2: author2@example.com / password123"
+puts "Reader with subscription: reader@example.com / password123"
+puts "Reader without subscription: reader_no_sub@example.com / password123"
+puts "Reader at limit: reader_limit@example.com / password123"
+
+puts ""
+puts "Subscription test works:"
+puts "Shadow System Hunter: free chapters until 3, chapter 4+ requires subscription"
+puts "My Quiet Life in the Demon Forest: free chapters until 5, chapter 6+ requires subscription"
+puts "Clockwork Mystery Academy: free chapters until 2, chapter 3+ requires subscription"
