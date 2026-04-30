@@ -8,6 +8,18 @@ export type ChapterNavigationItem = {
   title: string | null;
 };
 
+export type ChapterReadingProgress = {
+  id: number;
+  last_read_at: string;
+  progress_percent: number;
+  scroll_position: number;
+  last_chapter: {
+    id: number;
+    chapter_number: number;
+    title: string | null;
+  };
+};
+
 export type ChapterWork = {
   id: number;
   slug: string;
@@ -24,6 +36,13 @@ export type ChapterWork = {
     id: number;
     name: string;
   }[];
+  chapters: {
+    id: number;
+    chapter_number: number;
+    title: string | null;
+    is_free: boolean;
+    requires_subscription: boolean;
+  }[];
 };
 
 export type ChapterDetail = {
@@ -35,6 +54,7 @@ export type ChapterDetail = {
   is_free: boolean;
   requires_subscription: boolean;
   remaining_chapters_this_period: number | null;
+  reading_progress: ChapterReadingProgress | null;
   created_at: string;
   updated_at: string;
   work: ChapterWork;
@@ -79,6 +99,8 @@ export type SaveReadingProgressResponse = {
     id: number;
     work_id: number;
     last_read_at: string;
+    progress_percent: number;
+    scroll_position: number;
     last_chapter: {
       id: number;
       chapter_number: number;
@@ -89,7 +111,9 @@ export type SaveReadingProgressResponse = {
 
 export async function saveReadingProgress(
   workSlug: string,
-  chapterId: number
+  chapterId: number,
+  progressPercent = 0,
+  scrollPosition = 0
 ): Promise<SaveReadingProgressResponse> {
   const response = await fetch(
     `${API_BASE_URL}/works/${workSlug}/reading_progress`,
@@ -102,6 +126,8 @@ export async function saveReadingProgress(
       },
       body: JSON.stringify({
         chapter_id: chapterId,
+        progress_percent: progressPercent,
+        scroll_position: scrollPosition,
       }),
     }
   );

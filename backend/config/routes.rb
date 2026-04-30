@@ -39,7 +39,15 @@ Rails.application.routes.draw do
       end
 
       resources :library, only: [:index], controller: 'libraries'
-      resources :chapters, only: [:show]
+
+      resources :chapters, only: [:show] do
+        resources :comments, only: [:index, :create, :update, :destroy] do
+          member do
+            post :like
+            delete :like
+          end
+        end
+      end
     end
   end
 end

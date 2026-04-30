@@ -17,20 +17,44 @@ class Api::V1::ReadingProgressesController < ApplicationController
   end
 
   def save_progress
-    chapter = @work.chapters.find(params[:chapter_id])
+    chapter = @work.chapters.find(progress_params[:chapter_id])
 
-    progress = current_api_user.reading_progresses.find_or_initialize_by(work: @work)
-    progress.last_chapter = chapter
-    progress.last_read_at = Time.current
+    progress = nil
 
-    if progress.save
-      render json: {
-        message: "Reading progress saved",
-        reading_progress: reading_progress_payload(progress)
-      }, status: :ok
-    else
-      render json: { errors: progress.errors.full_messages }, status: :unprocessable_entity
+    ActiveRecord::Base.transaction do
+      progress = current_api_user
+        .reading_progresses
+        .lock
+        .find_or_initialize_by(work: @work)
+
+      progress.last_chapter = chapter
+      progress.last_read_at = Time.current
+      progress.progress_percent = normalized_progress_percent
+      progress.scroll_position = normalized_scroll_position
+      progress.save!
     end
+
+    render json: {
+      message: "Reading progress saved",
+      reading_progress: reading_progress_payload(progress)
+    }, status: :ok
+  rescue ActiveRecord::RecordNotUnique
+    retry
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+  end
+
+  def progress_params
+    params.permit(:chapter_id, :progress_percent, :scroll_position)
+  end
+
+  def normalized_progress_percent
+    value = progress_params[:progress_percent].to_i
+    [[value, 0].max, 100].min
+  end
+
+  def normalized_scroll_position
+    [progress_params[:scroll_position].to_i, 0].max
   end
 
   def reading_progress_payload(progress)
@@ -38,6 +62,8 @@ class Api::V1::ReadingProgressesController < ApplicationController
       id: progress.id,
       work_id: progress.work_id,
       last_read_at: progress.last_read_at,
+      progress_percent: progress.progress_percent,
+      scroll_position: progress.scroll_position,
       last_chapter: {
         id: progress.last_chapter.id,
         chapter_number: progress.last_chapter.chapter_number,

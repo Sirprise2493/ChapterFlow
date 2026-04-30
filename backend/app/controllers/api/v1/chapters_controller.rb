@@ -24,6 +24,7 @@ class Api::V1::ChaptersController < ApplicationController
     end
 
     work = chapter.work
+    reading_progress = current_api_user&.reading_progresses&.find_by(work_id: work.id)
 
     render json: {
       id: chapter.id,
@@ -36,6 +37,7 @@ class Api::V1::ChaptersController < ApplicationController
       is_free: free_chapter?(chapter),
       requires_subscription: !free_chapter?(chapter),
       remaining_chapters_this_period: remaining_chapters_for_current_user,
+      reading_progress: reading_progress_payload(reading_progress),
       work: {
         id: work.id,
         slug: work.slug,
@@ -52,6 +54,17 @@ class Api::V1::ChaptersController < ApplicationController
           {
             id: genre.id,
             name: genre.name
+          }
+        end,
+        chapters: work.chapters.order(:chapter_number).map do |work_chapter|
+          chapter_is_free = work.free_access? || work_chapter.chapter_number <= work.free_chapter_until
+
+          {
+            id: work_chapter.id,
+            chapter_number: work_chapter.chapter_number,
+            title: work_chapter.title,
+            is_free: chapter_is_free,
+            requires_subscription: !chapter_is_free
           }
         end
       },
@@ -91,6 +104,22 @@ class Api::V1::ChaptersController < ApplicationController
       id: chapter.id,
       chapter_number: chapter.chapter_number,
       title: chapter.title
+    }
+  end
+
+  def reading_progress_payload(progress)
+    return nil unless progress&.last_chapter
+
+    {
+      id: progress.id,
+      last_read_at: progress.last_read_at,
+      progress_percent: progress.progress_percent,
+      scroll_position: progress.scroll_position,
+      last_chapter: {
+        id: progress.last_chapter.id,
+        chapter_number: progress.last_chapter.chapter_number,
+        title: progress.last_chapter.title
+      }
     }
   end
 end
