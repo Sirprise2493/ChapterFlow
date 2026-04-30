@@ -13,6 +13,8 @@ class User < ApplicationRecord
   has_many :reading_progresses, dependent: :destroy
   has_many :chapter_reads, dependent: :destroy
   has_many :author_earnings, foreign_key: :author_id, dependent: :destroy
+  has_many :comment_likes, dependent: :destroy
+  has_many :liked_comments, through: :comment_likes, source: :comment
 
   validates :username, presence: true, uniqueness: true
 end

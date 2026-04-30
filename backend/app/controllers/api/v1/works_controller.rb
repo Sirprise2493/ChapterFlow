@@ -109,6 +109,8 @@ class Api::V1::WorksController < ApplicationController
     {
       id: progress.id,
       last_read_at: progress.last_read_at,
+      progress_percent: progress.progress_percent,
+      scroll_position: progress.scroll_position,
       last_chapter: {
         id: progress.last_chapter.id,
         chapter_number: progress.last_chapter.chapter_number,

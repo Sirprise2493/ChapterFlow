@@ -23,6 +23,8 @@ export type WorkChapter = {
 export type ReadingProgress = {
   id: number;
   last_read_at: string;
+  progress_percent: number;
+  scroll_position: number;
   last_chapter: {
     id: number;
     chapter_number: number;
