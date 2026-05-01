@@ -2559,3 +2559,138 @@ button:hover {
     right: 0;
   }
 }
+
+.test-plan-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 18px;
+  background: #f9fafb;
+  border: 1px solid #eef0f4;
+}
+
+.test-plan-box h3 {
+  margin: 0;
+  color: #111827;
+}
+
+.test-plan-box p {
+  margin: 0;
+  color: #4b5563;
+  font-weight: 700;
+}
+
+.test-plan-box button {
+  width: fit-content;
+  margin-top: 8px;
+}
+
+.subscription-access-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid #fed7aa;
+  border-radius: 18px;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.subscription-access-box strong {
+  display: block;
+  color: #7c2d12;
+  font-size: 1rem;
+}
+
+.subscription-access-box p {
+  margin-top: 4px;
+  color: #9a3412;
+  line-height: 1.5;
+}
+
+.subscription-access-button {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #c2410c;
+  color: white;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.subscription-access-button:hover {
+  opacity: 0.9;
+}
+
+.subscription-active-pill {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.chapter-row.locked {
+  position: relative;
+  grid-template-columns: 120px 1fr auto;
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+}
+
+.chapter-row.locked.available {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.chapter-row.locked span {
+  color: #c2410c;
+}
+
+.chapter-row.locked.available span {
+  color: #16a34a;
+}
+
+.chapter-lock-pill {
+  justify-self: end;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #fed7aa;
+  color: #9a3412;
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.chapter-lock-pill.unlocked {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.chapter-row.locked-clickable:hover {
+  border-color: #fb923c;
+}
+
+@media (max-width: 850px) {
+  .subscription-access-box {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .chapter-row.locked {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-lock-pill {
+    justify-self: start;
+  }
+}
+
+.chapter-lock-pill.author-access {
+  background: #e0e7ff;
+  color: #3730a3;
+}

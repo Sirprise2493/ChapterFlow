@@ -16,7 +16,9 @@ Rails.application.routes.draw do
       get 'me', to: 'me#show'
       get 'home', to: 'home#index'
 
-      resource :subscription, only: [:show], controller: 'subscription'
+      resource :subscription, only: [:show], controller: "subscription" do
+        post :activate_test
+      end
 
       namespace :author do
         get "dashboard", to: "dashboard#show"

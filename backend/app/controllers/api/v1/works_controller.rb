@@ -35,6 +35,17 @@ class Api::V1::WorksController < ApplicationController
     work = Work.includes(:author, :genres, :chapters).find_by!(slug: params[:id])
     reading_progress = current_api_user&.reading_progresses&.includes(:last_chapter)&.find_by(work_id: work.id)
 
+    current_user_has_active_subscription =
+      if current_api_user
+        current_api_user
+          .subscriptions
+          .where(status: :active)
+          .where("current_period_start <= ? AND current_period_end >= ?", Time.current, Time.current)
+          .exists?
+      else
+        false
+      end
+
     render json: {
       id: work.id,
       slug: work.slug,
@@ -44,6 +55,7 @@ class Api::V1::WorksController < ApplicationController
       status: work.status,
       access_level: work.access_level,
       free_chapter_until: work.free_chapter_until,
+      current_user_has_active_subscription: current_user_has_active_subscription,
       rating_avg: work.rating_avg,
       rating_count: work.rating_count,
       chapter_count: work.chapter_count,

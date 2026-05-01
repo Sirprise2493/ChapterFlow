@@ -9,6 +9,7 @@ import {
   removeWorkFromLibrary,
   trackWorkView,
 } from "../lib/works";
+import type { WorkChapter } from "../lib/works";
 
 type WorkShowPageProps = {
   currentUser: AuthUser | null;
@@ -158,6 +159,32 @@ function WorkShowPage({ currentUser }: WorkShowPageProps) {
     } finally {
       setSavingLibrary(false);
     }
+  };
+
+  const isAuthor = Boolean(currentUser && work?.author.id === currentUser.id);
+
+  const hasActiveSubscription = Boolean(
+    currentUser && work?.current_user_has_active_subscription
+  );
+
+  const canReadLockedChapters =
+    Boolean(currentUser) &&
+    (
+      work?.access_level === "free_access" ||
+      hasActiveSubscription ||
+      isAuthor
+    );
+
+  const getChapterLink = (chapter: WorkChapter) => {
+    if (!chapter.requires_subscription) {
+      return `/chapters/${chapter.id}`;
+    }
+
+    if (canReadLockedChapters) {
+      return `/chapters/${chapter.id}`;
+    }
+
+    return "/subscription";
   };
 
   if (loading) {
@@ -348,9 +375,13 @@ function WorkShowPage({ currentUser }: WorkShowPageProps) {
             {work.chapters.map((chapter) => (
               <Link
                 key={chapter.id}
-                to={`/chapters/${chapter.id}`}
+                to={getChapterLink(chapter)}
                 className={
-                  chapter.requires_subscription ? "chapter-row locked" : "chapter-row"
+                  chapter.requires_subscription && !canReadLockedChapters
+                    ? "chapter-row locked locked-clickable"
+                    : chapter.requires_subscription
+                      ? "chapter-row locked available"
+                      : "chapter-row"
                 }
               >
                 <span>
@@ -359,16 +390,48 @@ function WorkShowPage({ currentUser }: WorkShowPageProps) {
                 </span>
 
                 <strong>{chapter.title || "Ohne Titel"}</strong>
+
+                {chapter.requires_subscription && !canReadLockedChapters && (
+                  <em className="chapter-lock-pill">Abo benötigt</em>
+                )}
+
+                {chapter.requires_subscription && isAuthor && (
+                  <em className="chapter-lock-pill author-access">Autor-Zugriff</em>
+                )}
+
+                {chapter.requires_subscription && !isAuthor && hasActiveSubscription && (
+                  <em className="chapter-lock-pill unlocked">Freigeschaltet</em>
+                )}
               </Link>
             ))}
           </div>
         )}
 
         {work.access_level === "subscription_only" && (
-          <p className="subscription-note">
-            Kapitel 1 bis {work.free_chapter_until} sind kostenlos. Danach wird ein
-            aktives Abo benötigt.
-          </p>
+          <div className="subscription-access-box">
+            <div>
+              <strong>Abo-Werk</strong>
+              <p>
+                Kapitel 1 bis {work.free_chapter_until} sind kostenlos. Danach wird ein
+                aktives Abo benötigt.
+              </p>
+            </div>
+
+            {!work.current_user_has_active_subscription &&
+              currentUser?.id !== work.author.id && (
+                <Link to="/subscription" className="subscription-access-button">
+                  Abo ansehen
+                </Link>
+              )}
+
+            {work.current_user_has_active_subscription && (
+              <span className="subscription-active-pill">Abo aktiv</span>
+            )}
+
+            {currentUser?.id === work.author.id && (
+              <span className="subscription-active-pill">Autor-Zugriff</span>
+            )}
+          </div>
         )}
 
       </section>

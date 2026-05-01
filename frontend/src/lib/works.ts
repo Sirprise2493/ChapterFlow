@@ -41,6 +41,7 @@ export type WorkDetail = {
   status: string;
   access_level: string;
   free_chapter_until: number;
+  current_user_has_active_subscription: boolean;
   rating_avg: number | string | null;
   rating_count: number;
   chapter_count: number;
@@ -48,8 +49,14 @@ export type WorkDetail = {
   published_at: string | null;
   in_library: boolean;
   reading_progress: ReadingProgress | null;
-  author: WorkAuthor;
-  genres: WorkGenre[];
+  author: {
+    id: number;
+    username: string;
+  };
+  genres: {
+    id: number;
+    name: string;
+  }[];
   chapters: WorkChapter[];
 };
 
