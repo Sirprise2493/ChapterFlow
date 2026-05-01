@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import type { AuthUser } from "../lib/auth";
-import { getSubscription } from "../lib/subscription";
-import type { ActiveSubscription } from "../lib/subscription";
+import { activateTestSubscription, getSubscription } from "../lib/subscription";
+import type { ActiveSubscription, SubscriptionPlan } from "../lib/subscription";
 
 type SubscriptionPageProps = {
   currentUser: AuthUser | null;
@@ -12,6 +12,8 @@ function SubscriptionPage({ currentUser }: SubscriptionPageProps) {
   const [subscription, setSubscription] = useState<ActiveSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [availablePlan, setAvailablePlan] = useState<SubscriptionPlan | null>(null);
+  const [activating, setActivating] = useState(false);
 
   useEffect(() => {
     const loadSubscription = async () => {
@@ -23,6 +25,7 @@ function SubscriptionPage({ currentUser }: SubscriptionPageProps) {
       try {
         const data = await getSubscription();
         setSubscription(data.subscription);
+        setAvailablePlan(data.available_plan ?? null);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Abo konnte nicht geladen werden"
@@ -47,6 +50,25 @@ function SubscriptionPage({ currentUser }: SubscriptionPageProps) {
       )
     );
   }, [subscription]);
+
+  const handleActivateTestSubscription = async () => {
+    setActivating(true);
+    setError("");
+
+    try {
+      const data = await activateTestSubscription();
+      setSubscription(data.subscription);
+      setAvailablePlan(null);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Test-Abo konnte nicht aktiviert werden"
+      );
+    } finally {
+      setActivating(false);
+    }
+  };
 
   if (!currentUser) {
     return <Navigate to="/auth" replace />;
@@ -90,6 +112,30 @@ function SubscriptionPage({ currentUser }: SubscriptionPageProps) {
             Mit einem Abo kannst du geschützte Kapitel lesen und Autoren über
             Kapitel-Payouts unterstützen.
           </p>
+
+          {availablePlan && (
+            <div className="test-plan-box">
+              <h3>{availablePlan.name}</h3>
+
+              <p>
+                {formatMoney(availablePlan.price_cents, availablePlan.currency)} /{" "}
+                {formatBillingPeriod(availablePlan.billing_period)}
+              </p>
+
+              <p>
+                {availablePlan.monthly_chapter_limit} Kapitel pro Monat ·{" "}
+                {formatPercent(availablePlan.author_payout_share)} Autor-Anteil
+              </p>
+
+              <button
+                type="button"
+                disabled={activating}
+                onClick={handleActivateTestSubscription}
+              >
+                {activating ? "Aktiviert..." : "Test-Abo aktivieren"}
+              </button>
+            </div>
+          )}
 
           <div className="actions">
             <Link to="/" className="text-link">

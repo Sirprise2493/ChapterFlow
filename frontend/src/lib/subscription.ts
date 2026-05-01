@@ -39,6 +39,7 @@ export type ActiveSubscription = {
 
 export type SubscriptionResponse = {
   subscription: ActiveSubscription | null;
+  available_plan?: SubscriptionPlan | null;
   message?: string;
 };
 
@@ -62,4 +63,32 @@ export async function getSubscription(): Promise<SubscriptionResponse> {
   }
 
   return data as SubscriptionResponse;
+}
+
+export async function activateTestSubscription(): Promise<{
+  message: string;
+  subscription: ActiveSubscription;
+}> {
+  const response = await fetch(`${API_BASE_URL}/subscription/activate_test`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      ...getAuthHeader(),
+    },
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+        data?.errors?.join(", ") ||
+        "Test-Abo konnte nicht aktiviert werden"
+    );
+  }
+
+  return data as {
+    message: string;
+    subscription: ActiveSubscription;
+  };
 }

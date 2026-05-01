@@ -41,6 +41,7 @@ export type WorkDetail = {
   status: string;
   access_level: string;
   free_chapter_until: number;
+  current_user_has_active_subscription: boolean;
   rating_avg: number | string | null;
   rating_count: number;
   chapter_count: number;
@@ -48,8 +49,14 @@ export type WorkDetail = {
   published_at: string | null;
   in_library: boolean;
   reading_progress: ReadingProgress | null;
-  author: WorkAuthor;
-  genres: WorkGenre[];
+  author: {
+    id: number;
+    username: string;
+  };
+  genres: {
+    id: number;
+    name: string;
+  }[];
   chapters: WorkChapter[];
 };
 
@@ -252,6 +259,8 @@ export type WorksIndexParams = {
   sort?: string;
   page?: number;
   per_page?: number;
+  genre_ids?: string;
+  min_words?: string;
 };
 
 export type WorksIndexResponse = {
@@ -273,6 +282,7 @@ export type HomeLikeWork = {
   rating_avg: number | string | null;
   rating_count: number;
   chapter_count: number;
+  word_count: number;
   views_count: number;
   author: {
     id: number;
@@ -296,6 +306,8 @@ export async function getWorks(
   if (params.sort) searchParams.set("sort", params.sort);
   if (params.page) searchParams.set("page", String(params.page));
   if (params.per_page) searchParams.set("per_page", String(params.per_page));
+  if (params.genre_ids) searchParams.set("genre_ids", params.genre_ids);
+  if (params.min_words) searchParams.set("min_words", params.min_words);
 
   const queryString = searchParams.toString();
 

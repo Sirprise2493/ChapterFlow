@@ -16,6 +16,8 @@ import AuthorWorkEditPage from "./pages/AuthorWorkEditPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import AuthorDashboardPage from "./pages/AuthorDashboardPage";
 import WorksPage from "./pages/WorksPage";
+import AuthorEarningsPage from "./pages/AuthorEarningsPage";
+import AuthorCommentsPage from "./pages/AuthorCommentsPage";
 
 
 function App() {
@@ -150,7 +152,15 @@ function App() {
             element={<AuthorDashboardPage currentUser={currentUser} />}
           />
 
+          <Route
+            path="/author/earnings"
+            element={<AuthorEarningsPage currentUser={currentUser} />}
+          />
 
+          <Route
+            path="/author/comments"
+            element={<AuthorCommentsPage currentUser={currentUser} />}
+          />
 
           <Route
             path="/author/works"

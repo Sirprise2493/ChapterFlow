@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_04_30_152510) do
+ActiveRecord::Schema[7.1].define(version: 2026_05_01_143318) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -81,15 +81,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_30_152510) do
 
   create_table "comments", force: :cascade do |t|
     t.bigint "user_id", null: false
-    t.bigint "chapter_id", null: false
+    t.bigint "chapter_id"
     t.bigint "parent_comment_id"
     t.text "content", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "media_url"
     t.string "media_type"
+    t.bigint "work_id"
     t.index ["chapter_id"], name: "index_comments_on_chapter_id"
     t.index ["user_id"], name: "index_comments_on_user_id"
+    t.index ["work_id", "created_at"], name: "index_comments_on_work_id_and_created_at"
+    t.index ["work_id"], name: "index_comments_on_work_id"
   end
 
   create_table "genres", force: :cascade do |t|
@@ -230,6 +233,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_30_152510) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "free_chapter_until", default: 0, null: false
+    t.integer "word_count", default: 0, null: false
     t.index ["author_id"], name: "index_works_on_author_id"
     t.index ["chapter_count"], name: "index_works_on_chapter_count"
     t.index ["published_at"], name: "index_works_on_published_at"
@@ -237,6 +241,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_30_152510) do
     t.index ["slug"], name: "index_works_on_slug", unique: true
     t.index ["status"], name: "index_works_on_status"
     t.index ["views_count"], name: "index_works_on_views_count"
+    t.index ["word_count"], name: "index_works_on_word_count"
   end
 
   add_foreign_key "author_earnings", "chapter_reads"
@@ -257,6 +262,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_30_152510) do
   add_foreign_key "comments", "chapters"
   add_foreign_key "comments", "comments", column: "parent_comment_id"
   add_foreign_key "comments", "users"
+  add_foreign_key "comments", "works"
   add_foreign_key "ratings", "users"
   add_foreign_key "ratings", "works"
   add_foreign_key "reading_progresses", "chapters", column: "last_chapter_id"

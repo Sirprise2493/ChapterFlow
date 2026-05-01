@@ -1,6 +1,7 @@
 class Comment < ApplicationRecord
   belongs_to :user
-  belongs_to :chapter
+  belongs_to :chapter, optional: true
+  belongs_to :work, optional: true
   belongs_to :parent_comment, class_name: "Comment", optional: true
 
   has_many :replies,
@@ -9,8 +10,19 @@ class Comment < ApplicationRecord
            dependent: :destroy
 
   has_many :comment_likes, dependent: :destroy
-  has_many :liked_by_users, through: :comment_likes, source: :user
 
   validates :content, presence: true, unless: -> { media_url.present? }
-  validates :media_type, inclusion: { in: %w[image gif], allow_blank: true }
+  validate :comment_target_present
+
+  private
+
+  def comment_target_present
+    if chapter_id.blank? && work_id.blank?
+      errors.add(:base, "Comment must belong to a chapter or a work")
+    end
+
+    if chapter_id.present? && work_id.present?
+      errors.add(:base, "Comment cannot belong to both chapter and work")
+    end
+  end
 end
