@@ -1,20 +1,21 @@
 puts "Seeding started..."
 
 # Cleanup in sinnvoller Reihenfolge
-AuthorEarning.delete_all
-ChapterRead.delete_all
-SubscriptionPeriod.delete_all
-Subscription.delete_all
-SubscriptionPlan.delete_all
-ReadingProgress.delete_all
-UserLibrary.delete_all
-Comment.delete_all
-Rating.delete_all
-WorkGenre.delete_all
-Chapter.delete_all
-Work.delete_all
-Genre.delete_all
-User.delete_all
+AuthorEarning.delete_all if defined?(AuthorEarning)
+ChapterRead.delete_all if defined?(ChapterRead)
+SubscriptionPeriod.delete_all if defined?(SubscriptionPeriod)
+Subscription.delete_all if defined?(Subscription)
+SubscriptionPlan.delete_all if defined?(SubscriptionPlan)
+ReadingProgress.delete_all if defined?(ReadingProgress)
+UserLibrary.delete_all if defined?(UserLibrary)
+CommentLike.delete_all if defined?(CommentLike)
+Comment.delete_all if defined?(Comment)
+Rating.delete_all if defined?(Rating)
+WorkGenre.delete_all if defined?(WorkGenre)
+Chapter.delete_all if defined?(Chapter)
+Work.delete_all if defined?(Work)
+Genre.delete_all if defined?(Genre)
+User.delete_all if defined?(User)
 
 # Users
 author1 = User.create!(
@@ -57,7 +58,7 @@ reader_at_limit = User.create!(
   status: :active
 )
 
-extra_readers = 8.times.map do |index|
+extra_readers = 12.times.map do |index|
   User.create!(
     email: "reader#{index + 2}@example.com",
     username: "reader_#{index + 2}",
@@ -87,7 +88,7 @@ reincarnation = Genre.create!(name: "Reincarnation")
 mystery = Genre.create!(name: "Mystery")
 comedy = Genre.create!(name: "Comedy")
 
-# Subscription Plan
+# Subscription Plans
 premium_plan = SubscriptionPlan.create!(
   name: "Premium Monthly",
   price_cents: 999,
@@ -119,7 +120,7 @@ active_subscription = Subscription.create!(
   current_period_end: Time.current.end_of_month
 )
 
-active_period = SubscriptionPeriod.create!(
+SubscriptionPeriod.create!(
   subscription: active_subscription,
   user: reader_with_subscription,
   plan: premium_plan,
@@ -129,7 +130,7 @@ active_period = SubscriptionPeriod.create!(
   currency_snapshot: premium_plan.currency,
   monthly_chapter_limit_snapshot: premium_plan.monthly_chapter_limit,
   author_payout_share_snapshot: premium_plan.author_payout_share,
-  per_chapter_payout_cents: 0.7992,
+  per_chapter_payout_cents: ((premium_plan.price_cents * premium_plan.author_payout_share) / premium_plan.monthly_chapter_limit).round(4),
   chapters_read_count: 0
 )
 
@@ -144,7 +145,7 @@ limit_subscription = Subscription.create!(
   current_period_end: Time.current.end_of_month
 )
 
-limit_period = SubscriptionPeriod.create!(
+SubscriptionPeriod.create!(
   subscription: limit_subscription,
   user: reader_at_limit,
   plan: limited_plan,
@@ -154,11 +155,25 @@ limit_period = SubscriptionPeriod.create!(
   currency_snapshot: limited_plan.currency,
   monthly_chapter_limit_snapshot: limited_plan.monthly_chapter_limit,
   author_payout_share_snapshot: limited_plan.author_payout_share,
-  per_chapter_payout_cents: 2.6640,
+  per_chapter_payout_cents: ((limited_plan.price_cents * limited_plan.author_payout_share) / limited_plan.monthly_chapter_limit).round(4),
   chapters_read_count: limited_plan.monthly_chapter_limit
 )
 
-works_data = [
+def sample_chapter_content(work_title, chapter_number)
+  <<~TEXT
+    This is chapter #{chapter_number} of "#{work_title}".
+
+    The story continues with new tension, new decisions, and a stronger sense of momentum.
+
+    This sample chapter exists so you can test reading progress, subscription access, chapter limits, comments, ratings, libraries, author dashboards, and author payouts.
+
+    If this work is subscription-only, chapters after the free chapter limit should require an active subscription.
+
+    The hero faces a difficult choice, the supporting cast reacts, and the world expands through conflict, mystery, humor, and emotion.
+  TEXT
+end
+
+base_works_data = [
   {
     author: author1,
     title: "The Last Arcane King",
@@ -171,6 +186,7 @@ works_data = [
     views_count: 12_000,
     published_at: 20.days.ago,
     chapter_total: 12,
+    word_count: 124_000,
     genres: [fantasy, action, adventure, reincarnation]
   },
   {
@@ -184,7 +200,8 @@ works_data = [
     free_chapter_until: 3,
     views_count: 22_000,
     published_at: 15.days.ago,
-    chapter_total: 12,
+    chapter_total: 18,
+    word_count: 360_000,
     genres: [action, fantasy, system]
   },
   {
@@ -198,7 +215,8 @@ works_data = [
     free_chapter_until: 0,
     views_count: 18_000,
     published_at: 10.days.ago,
-    chapter_total: 10,
+    chapter_total: 14,
+    word_count: 92_000,
     genres: [romance, drama, fantasy, reincarnation]
   },
   {
@@ -213,6 +231,7 @@ works_data = [
     views_count: 9_000,
     published_at: 40.days.ago,
     chapter_total: 9,
+    word_count: 48_000,
     genres: [adventure, action, fantasy]
   },
   {
@@ -226,7 +245,8 @@ works_data = [
     free_chapter_until: 5,
     views_count: 14_000,
     published_at: 5.days.ago,
-    chapter_total: 14,
+    chapter_total: 22,
+    word_count: 510_000,
     genres: [fantasy, adventure, drama]
   },
   {
@@ -240,7 +260,8 @@ works_data = [
     free_chapter_until: 0,
     views_count: 30_000,
     published_at: 30.days.ago,
-    chapter_total: 11,
+    chapter_total: 16,
+    word_count: 302_000,
     genres: [romance, drama]
   },
   {
@@ -254,7 +275,8 @@ works_data = [
     free_chapter_until: 2,
     views_count: 7_500,
     published_at: 3.days.ago,
-    chapter_total: 8,
+    chapter_total: 11,
+    word_count: 76_000,
     genres: [mystery, fantasy, drama]
   },
   {
@@ -268,10 +290,77 @@ works_data = [
     free_chapter_until: 0,
     views_count: 16_500,
     published_at: 2.days.ago,
-    chapter_total: 10,
+    chapter_total: 13,
+    word_count: 118_000,
     genres: [comedy, fantasy, action]
   }
 ]
+
+generated_titles = [
+  ["Moonlit Sword Saint", [fantasy, action, adventure], 58_000],
+  ["Dungeon Delivery Service", [comedy, adventure, system], 24_000],
+  ["The Duchess Solves Murders", [romance, mystery, drama], 112_000],
+  ["Infinite Level Tavern", [system, comedy, fantasy], 64_000],
+  ["Reincarnated as a Library Ghost", [reincarnation, mystery, comedy], 37_000],
+  ["Dragon Market Broker", [fantasy, adventure, comedy], 82_000],
+  ["The Saintess Refuses Destiny", [romance, drama, fantasy], 158_000],
+  ["Blade Runner of the East Gate", [action, mystery, adventure], 71_000],
+  ["My Brother Is the Final Boss", [fantasy, system, drama], 206_000],
+  ["The Alchemist's Fake Engagement", [romance, comedy, fantasy], 54_000],
+  ["Seven Lives of the Black Cat", [reincarnation, mystery, fantasy], 96_000],
+  ["Guild Receptionist at Level 999", [system, comedy, adventure], 188_000],
+  ["Ashes of the Silver Empire", [fantasy, action, drama], 442_000],
+  ["Detective of the Demon Court", [mystery, fantasy, drama], 129_000],
+  ["Romance Route Error", [romance, comedy, system], 33_000],
+  ["The Last Quest Board", [adventure, fantasy, comedy], 67_000],
+  ["Crown Prince of the Abyss", [fantasy, action, romance], 305_000],
+  ["A Maid's Guide to Revolution", [drama, romance, mystery], 87_000],
+  ["Skill Thief Chronicle", [system, action, fantasy], 526_000],
+  ["The Forgotten Floor", [mystery, adventure, system], 141_000],
+  ["Princess of Practical Magic", [fantasy, comedy, romance], 73_000],
+  ["Monster Ranch Regression", [reincarnation, system, adventure], 254_000],
+  ["The Hero's Tax Accountant", [comedy, fantasy, adventure], 18_000],
+  ["Empire of Broken Oaths", [drama, fantasy, action], 612_000],
+  ["The Oracle Logs Out", [system, mystery, comedy], 46_000],
+  ["Hearts Beneath Iron Snow", [romance, drama, mystery], 335_000],
+  ["The Million Word Necromancer", [fantasy, system, action], 1_050_000],
+  ["A Thousand Doors Academy", [fantasy, mystery, adventure], 720_000]
+]
+
+generated_works_data = generated_titles.each_with_index.map do |(title, genre_list, word_count), index|
+  author = index.even? ? author1 : author2
+  access_level = index % 4 == 0 ? :subscription_only : :free_access
+
+  chapter_total =
+    case word_count
+    when 0...50_000
+      6 + (index % 4)
+    when 50_000...150_000
+      10 + (index % 6)
+    when 150_000...350_000
+      16 + (index % 8)
+    else
+      24 + (index % 12)
+    end
+
+  {
+    author: author,
+    title: title,
+    slug: title.downcase.gsub(/[^a-z0-9]+/, "-").gsub(/^-|-$/, ""),
+    description: "#{title} is a seeded test work for pagination, genre combinations, search, sorting, and word-count filters.",
+    cover_picture: "https://picsum.photos/seed/#{title.downcase.gsub(/[^a-z0-9]+/, "-")}/600/900",
+    status: index % 5 == 0 ? :completed : :ongoing,
+    access_level: access_level,
+    free_chapter_until: access_level == :subscription_only ? 3 + (index % 3) : 0,
+    views_count: 2_500 + (index * 1_375),
+    published_at: (index + 1).days.ago,
+    chapter_total: chapter_total,
+    word_count: word_count,
+    genres: genre_list
+  }
+end
+
+works_data = base_works_data + generated_works_data
 
 created_works = works_data.map do |data|
   work = Work.create!(
@@ -286,6 +375,7 @@ created_works = works_data.map do |data|
     rating_count: 0,
     rating_avg: nil,
     chapter_count: 0,
+    word_count: 0,
     views_count: data[:views_count],
     is_subscription_eligible: true,
     published_at: data[:published_at]
@@ -302,40 +392,28 @@ created_works = works_data.map do |data|
       work: work,
       chapter_number: chapter_number,
       title: "Chapter #{chapter_number}",
-      content: <<~TEXT,
-        This is chapter #{chapter_number} of "#{work.title}".
-
-        The story continues with new tension, new decisions, and a stronger sense of momentum.
-
-        This sample chapter exists so you can test reading progress, subscription access, chapter limits, and author payouts.
-
-        If this work is subscription-only, chapters after the free chapter limit should require an active subscription.
-      TEXT
+      content: sample_chapter_content(work.title, chapter_number),
       is_monetizable: true
     )
   end
 
-  work.update!(chapter_count: work.chapters.count)
+  # Die echte Chapter-Content-Länge ist kurz, damit Seeds schnell bleiben.
+  # word_count ist ein Snapshot-Testwert für Browse/Filter/Sortierung.
+  work.update!(
+    chapter_count: work.chapters.count,
+    word_count: data[:word_count]
+  )
+
   work
 end
 
 # Ratings: mindestens 3 Ratings pro Work, damit Top-Listen funktionieren
-rating_patterns = {
-  "the-last-arcane-king" => [5, 5, 4, 5, 4, 5],
-  "shadow-system-hunter" => [5, 4, 4, 5, 5, 4],
-  "reborn-as-the-tyrants-healer" => [5, 5, 5, 4, 4],
-  "the-hero-quit-the-guild" => [4, 4, 5, 4],
-  "my-quiet-life-in-the-demon-forest" => [4, 5, 4, 4, 5],
-  "contract-marriage-with-the-ice-duke" => [5, 5, 4, 5, 5, 5],
-  "clockwork-mystery-academy" => [4, 4, 3, 5],
-  "the-villain-wants-a-vacation" => [5, 4, 5, 4, 5]
-}
+created_works.each_with_index do |work, work_index|
+  rating_count = 3 + (work_index % 5)
 
-created_works.each do |work|
-  scores = rating_patterns.fetch(work.slug)
-
-  scores.each_with_index do |score, index|
-    user = all_rating_users[index]
+  rating_count.times do |index|
+    user = all_rating_users[index % all_rating_users.length]
+    score = 3 + ((work_index + index) % 3)
 
     Rating.create!(
       user: user,
@@ -346,31 +424,31 @@ created_works.each do |work|
 end
 
 # Library
-UserLibrary.create!(
-  user: reader_with_subscription,
-  work: created_works.find { |work| work.slug == "the-last-arcane-king" },
-  added_at: 3.days.ago
-)
+[
+  "the-last-arcane-king",
+  "shadow-system-hunter",
+  "my-quiet-life-in-the-demon-forest",
+  "the-million-word-necromancer"
+].each_with_index do |slug, index|
+  work = created_works.find { |item| item.slug == slug }
+  next unless work
 
-UserLibrary.create!(
-  user: reader_with_subscription,
-  work: created_works.find { |work| work.slug == "shadow-system-hunter" },
-  added_at: 2.days.ago
-)
+  UserLibrary.create!(
+    user: reader_with_subscription,
+    work: work,
+    added_at: (index + 1).days.ago
+  )
+end
 
-UserLibrary.create!(
-  user: reader_with_subscription,
-  work: created_works.find { |work| work.slug == "my-quiet-life-in-the-demon-forest" },
-  added_at: 1.day.ago
-)
+shadow_system_hunter = created_works.find { |work| work.slug == "shadow-system-hunter" }
 
 UserLibrary.create!(
   user: reader_without_subscription,
-  work: created_works.find { |work| work.slug == "shadow-system-hunter" },
+  work: shadow_system_hunter,
   added_at: 1.day.ago
-)
+) if shadow_system_hunter
 
-# Reading progress: nur ein freies Kapitel, damit ChapterRead/AuthorEarning sauber bei 0 starten können
+# Reading progress: freies Kapitel, damit ChapterRead/AuthorEarning sauber bei 0 starten können
 progress_work = created_works.find { |work| work.slug == "the-last-arcane-king" }
 progress_chapter = progress_work.chapters.find_by!(chapter_number: 3)
 
@@ -378,24 +456,119 @@ ReadingProgress.create!(
   user: reader_with_subscription,
   work: progress_work,
   last_chapter: progress_chapter,
-  last_read_at: 2.hours.ago
+  last_read_at: 2.hours.ago,
+  progress_percent: 35,
+  scroll_position: 480
 )
 
-# Comments
+# Chapter Comments
 sample_chapter = progress_work.chapters.first
 
-comment1 = Comment.create!(
+chapter_comment1 = Comment.create!(
   user: reader_with_subscription,
   chapter: sample_chapter,
   content: "Really strong first chapter."
 )
 
-Comment.create!(
+chapter_comment2 = Comment.create!(
   user: author2,
   chapter: sample_chapter,
-  parent_comment: comment1,
+  parent_comment: chapter_comment1,
   content: "Agreed, the opening was great."
 )
+
+chapter_comment3 = Comment.create!(
+  user: reader_without_subscription,
+  chapter: sample_chapter,
+  content: "The pacing is already interesting."
+)
+
+# Work Comments
+arcane_king = created_works.find { |work| work.slug == "the-last-arcane-king" }
+shadow_hunter = created_works.find { |work| work.slug == "shadow-system-hunter" }
+demon_forest = created_works.find { |work| work.slug == "my-quiet-life-in-the-demon-forest" }
+ice_duke = created_works.find { |work| work.slug == "contract-marriage-with-the-ice-duke" }
+
+work_comment1 = Comment.create!(
+  user: reader_with_subscription,
+  work: shadow_hunter,
+  content: "This is exactly the kind of system fantasy I wanted. The pacing feels really addictive."
+)
+
+work_comment2 = Comment.create!(
+  user: reader_without_subscription,
+  work: shadow_hunter,
+  content: "I like the premise, but I need a subscription before I can continue past the free chapters."
+)
+
+work_comment3 = Comment.create!(
+  user: author2,
+  work: shadow_hunter,
+  parent_comment: work_comment1,
+  content: "Same here. The skill stealing idea is fun."
+)
+
+work_comment4 = Comment.create!(
+  user: reader_at_limit,
+  work: shadow_hunter,
+  content: "I reached my monthly chapter limit while reading this. Good test case for the subscription limit."
+)
+
+work_comment5 = Comment.create!(
+  user: reader_with_subscription,
+  work: arcane_king,
+  content: "The reincarnation angle works nicely here. The worldbuilding is clear without being too slow."
+)
+
+work_comment6 = Comment.create!(
+  user: reader_without_subscription,
+  work: arcane_king,
+  parent_comment: work_comment5,
+  content: "Agree. This one is easy to start because it is free access."
+)
+
+work_comment7 = Comment.create!(
+  user: extra_readers[0],
+  work: demon_forest,
+  content: "The calm-life fantasy setup is cozy, but the conflict keeps it interesting."
+)
+
+work_comment8 = Comment.create!(
+  user: extra_readers[1],
+  work: demon_forest,
+  parent_comment: work_comment7,
+  content: "The free chapter limit is also useful for testing locked chapters."
+)
+
+work_comment9 = Comment.create!(
+  user: extra_readers[2],
+  work: ice_duke,
+  content: "The romance/drama combination is strong. This should show up when filtering Romance + Drama."
+)
+
+work_comment10 = Comment.create!(
+  user: extra_readers[3],
+  work: ice_duke,
+  content: "Testing a work-level comment with an image attachment.",
+  media_url: "https://picsum.photos/seed/work-comment-media/500/300",
+  media_type: "image"
+)
+
+# Optional Likes
+if defined?(CommentLike)
+  [
+    [reader_without_subscription, work_comment1],
+    [reader_at_limit, work_comment1],
+    [extra_readers[0], work_comment1],
+    [reader_with_subscription, work_comment2],
+    [author1, work_comment5],
+    [reader_with_subscription, work_comment7],
+    [reader_without_subscription, chapter_comment1],
+    [extra_readers[1], chapter_comment1]
+  ].each do |user, comment|
+    CommentLike.find_or_create_by!(user: user, comment: comment)
+  end
+end
 
 puts "Seeding finished."
 puts "Users: #{User.count}"
@@ -404,6 +577,7 @@ puts "Works: #{Work.count}"
 puts "Chapters: #{Chapter.count}"
 puts "Ratings: #{Rating.count}"
 puts "Comments: #{Comment.count}"
+puts "CommentLikes: #{defined?(CommentLike) ? CommentLike.count : 0}"
 puts "Subscriptions: #{Subscription.count}"
 puts "SubscriptionPeriods: #{SubscriptionPeriod.count}"
 puts "ChapterReads: #{ChapterRead.count}"
@@ -418,7 +592,25 @@ puts "Reader without subscription: reader_no_sub@example.com / password123"
 puts "Reader at limit: reader_limit@example.com / password123"
 
 puts ""
+puts "Browse/Search test data:"
+puts "Works: #{Work.count} total, enough for pagination with 12 per page"
+puts "Word count examples:"
+puts "> 10,000: #{Work.where('word_count >= ?', 10_000).count}"
+puts "> 50,000: #{Work.where('word_count >= ?', 50_000).count}"
+puts "> 100,000: #{Work.where('word_count >= ?', 100_000).count}"
+puts "> 300,000: #{Work.where('word_count >= ?', 300_000).count}"
+puts "> 500,000: #{Work.where('word_count >= ?', 500_000).count}"
+puts "> 1,000,000: #{Work.where('word_count >= ?', 1_000_000).count}"
+
+puts ""
 puts "Subscription test works:"
 puts "Shadow System Hunter: free chapters until 3, chapter 4+ requires subscription"
 puts "My Quiet Life in the Demon Forest: free chapters until 5, chapter 6+ requires subscription"
 puts "Clockwork Mystery Academy: free chapters until 2, chapter 3+ requires subscription"
+
+puts ""
+puts "Work comment test works:"
+puts "Shadow System Hunter: several work comments, replies and likes"
+puts "The Last Arcane King: free-access work comments"
+puts "My Quiet Life in the Demon Forest: subscription work comments"
+puts "Contract Marriage with the Ice Duke: media comment"

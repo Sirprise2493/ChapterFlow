@@ -10,6 +10,8 @@ import {
   trackWorkView,
 } from "../lib/works";
 import type { WorkChapter } from "../lib/works";
+import WorkCommentsSection from "../components/WorkCommentsSection";
+
 
 type WorkShowPageProps = {
   currentUser: AuthUser | null;
@@ -435,6 +437,12 @@ function WorkShowPage({ currentUser }: WorkShowPageProps) {
         )}
 
       </section>
+
+      <WorkCommentsSection
+        workSlug={work.slug}
+        currentUser={currentUser}
+      />
+
     </>
   );
 }

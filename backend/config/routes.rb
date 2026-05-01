@@ -2,19 +2,19 @@ Rails.application.routes.draw do
   namespace :api, defaults: { format: :json } do
     namespace :v1 do
       devise_for :users,
-                path: '',
-                path_names: {
-                  sign_in: 'login',
-                  sign_out: 'logout',
-                  registration: 'signup'
-                },
-                controllers: {
-                  sessions: 'api/v1/users/sessions',
-                  registrations: 'api/v1/users/registrations'
-                }
+                 path: "",
+                 path_names: {
+                   sign_in: "login",
+                   sign_out: "logout",
+                   registration: "signup"
+                 },
+                 controllers: {
+                   sessions: "api/v1/users/sessions",
+                   registrations: "api/v1/users/registrations"
+                 }
 
-      get 'me', to: 'me#show'
-      get 'home', to: 'home#index'
+      get "me", to: "me#show"
+      get "home", to: "home#index"
 
       resource :subscription, only: [:show], controller: "subscription" do
         post :activate_test
@@ -22,6 +22,9 @@ Rails.application.routes.draw do
 
       namespace :author do
         get "dashboard", to: "dashboard#show"
+        get "earnings", to: "earnings#index"
+        get "comments", to: "comments#index"
+        delete "comments/:id", to: "comments#destroy"
 
         resources :works, only: [:index, :show, :create, :update] do
           resources :chapters, only: [:create, :update, :destroy]
@@ -36,12 +39,25 @@ Rails.application.routes.draw do
         end
 
         resources :ratings, only: [:create, :update]
-        resource :library, only: [:create, :destroy], controller: 'libraries'
+        resource :library, only: [:create, :destroy], controller: "libraries"
         resource :reading_progress, only: [:create, :update]
+
+        # Allgemeine Kommentare zum Werk:
+        # /api/v1/works/:work_id/comments
+        resources :comments,
+                  only: [:index, :create, :update, :destroy],
+                  controller: "work_comments" do
+          member do
+            post :like
+            delete :like
+          end
+        end
       end
 
-      resources :library, only: [:index], controller: 'libraries'
+      resources :library, only: [:index], controller: "libraries"
 
+      # Kommentare zu einzelnen Kapiteln:
+      # /api/v1/chapters/:chapter_id/comments
       resources :chapters, only: [:show] do
         resources :comments, only: [:index, :create, :update, :destroy] do
           member do

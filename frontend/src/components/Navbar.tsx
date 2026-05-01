@@ -19,6 +19,8 @@ function Navbar({ isLoggedIn, onLogout }: NavbarProps) {
 
         {isLoggedIn && <NavLink to="/subscription">Abo</NavLink>}
         {isLoggedIn && <NavLink to="/author/dashboard">Dashboard</NavLink>}
+        {isLoggedIn && <NavLink to="/author/earnings">Earnings</NavLink>}
+        {isLoggedIn && <NavLink to="/author/comments">Comments</NavLink>}
         {isLoggedIn && <NavLink to="/author/works">Author</NavLink>}
 
         {isLoggedIn ? (

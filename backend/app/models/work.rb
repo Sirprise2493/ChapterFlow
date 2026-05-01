@@ -2,6 +2,7 @@ class Work < ApplicationRecord
   belongs_to :author, class_name: "User"
 
   has_many :chapters, dependent: :destroy
+  has_many :comments, dependent: :destroy
   has_many :ratings, dependent: :destroy
   has_many :work_genres, dependent: :destroy
   has_many :genres, through: :work_genres
@@ -28,5 +29,26 @@ class Work < ApplicationRecord
   }
   scope :search_query, ->(query) {
     query.present? ? where("title ILIKE :q OR description ILIKE :q", q: "%#{query}%") : all
+  }
+
+  scope :with_min_words, ->(count) {
+    count.present? ? where("word_count >= ?", count.to_i) : all
+  }
+
+  scope :by_genre_ids, ->(genre_ids) {
+    ids =
+      case genre_ids
+      when String
+        genre_ids.split(",")
+      else
+        Array(genre_ids)
+      end.reject(&:blank?).map(&:to_i).uniq
+
+    return all if ids.empty?
+
+    joins(:work_genres)
+      .where(work_genres: { genre_id: ids })
+      .group("works.id")
+      .having("COUNT(DISTINCT work_genres.genre_id) = ?", ids.size)
   }
 end

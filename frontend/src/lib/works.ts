@@ -259,6 +259,8 @@ export type WorksIndexParams = {
   sort?: string;
   page?: number;
   per_page?: number;
+  genre_ids?: string;
+  min_words?: string;
 };
 
 export type WorksIndexResponse = {
@@ -280,6 +282,7 @@ export type HomeLikeWork = {
   rating_avg: number | string | null;
   rating_count: number;
   chapter_count: number;
+  word_count: number;
   views_count: number;
   author: {
     id: number;
@@ -303,6 +306,8 @@ export async function getWorks(
   if (params.sort) searchParams.set("sort", params.sort);
   if (params.page) searchParams.set("page", String(params.page));
   if (params.per_page) searchParams.set("per_page", String(params.per_page));
+  if (params.genre_ids) searchParams.set("genre_ids", params.genre_ids);
+  if (params.min_words) searchParams.set("min_words", params.min_words);
 
   const queryString = searchParams.toString();
 
