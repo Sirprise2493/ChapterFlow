@@ -17,6 +17,7 @@ export type AuthorCommentWork = {
 
 export type AuthorModerationComment = {
   id: number;
+  comment_type: "work" | "chapter";
   content: string | null;
   media_url: string | null;
   media_type: "image" | "gif" | null;
@@ -38,7 +39,7 @@ export type AuthorModerationComment = {
     id: number;
     chapter_number: number;
     title: string | null;
-  };
+  } | null;
 };
 
 export type AuthorCommentsResponse = {
@@ -50,6 +51,7 @@ export type AuthorCommentsResponse = {
 };
 
 export type AuthorCommentsParams = {
+  comment_type?: string;
   work_id?: string;
   chapter_id?: string;
   page?: number;
@@ -61,6 +63,7 @@ export async function getAuthorComments(
 ): Promise<AuthorCommentsResponse> {
   const searchParams = new URLSearchParams();
 
+  if (params.comment_type) searchParams.set("comment_type", params.comment_type);
   if (params.work_id) searchParams.set("work_id", params.work_id);
   if (params.chapter_id) searchParams.set("chapter_id", params.chapter_id);
   if (params.page) searchParams.set("page", String(params.page));

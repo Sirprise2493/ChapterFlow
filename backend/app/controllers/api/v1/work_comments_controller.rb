@@ -35,6 +35,8 @@ class Api::V1::WorkCommentsController < ApplicationController
     end
 
     if comment.save
+       NotificationCreator.comment_reply!(comment: comment) if comment.parent_comment_id.present?
+
       render json: {
         message: "Comment created",
         comment: comment_payload(comment)
@@ -88,7 +90,14 @@ class Api::V1::WorkCommentsController < ApplicationController
       }, status: :ok
     end
 
-    @comment.comment_likes.find_or_create_by!(user: current_api_user)
+    like = @comment.comment_likes.find_or_create_by!(user: current_api_user)
+
+    if like.previously_new_record?
+      NotificationCreator.comment_like!(
+        comment: @comment,
+        actor: current_api_user
+      )
+    end
 
     render json: {
       message: "Comment liked",

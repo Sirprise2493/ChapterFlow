@@ -15,6 +15,12 @@ class User < ApplicationRecord
   has_many :author_earnings, foreign_key: :author_id, dependent: :destroy
   has_many :comment_likes, dependent: :destroy
   has_many :liked_comments, through: :comment_likes, source: :comment
+  has_many :notifications, dependent: :destroy
+  has_many :triggered_notifications,
+          class_name: "Notification",
+          foreign_key: :actor_id,
+          dependent: :nullify
+
 
   validates :username, presence: true, uniqueness: true
 end

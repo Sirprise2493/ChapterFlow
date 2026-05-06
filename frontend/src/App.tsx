@@ -18,6 +18,7 @@ import AuthorDashboardPage from "./pages/AuthorDashboardPage";
 import WorksPage from "./pages/WorksPage";
 import AuthorEarningsPage from "./pages/AuthorEarningsPage";
 import AuthorCommentsPage from "./pages/AuthorCommentsPage";
+import NotificationsPage from "./pages/NotificationsPage";
 
 
 function App() {
@@ -62,10 +63,12 @@ function App() {
 
     try {
       await logout();
+    } catch (err) {
+      console.warn("Backend logout failed, clearing local session anyway", err);
+    } finally {
+      localStorage.removeItem("authToken");
       setCurrentUser(null);
       setMessage("Logged out successfully");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Logout failed");
     }
   };
 
@@ -86,7 +89,7 @@ function App() {
         <Route
           element={
             <AppLayout
-              isLoggedIn={Boolean(currentUser)}
+              currentUser={currentUser}
               onLogout={handleLogout}
             />
           }
@@ -165,6 +168,11 @@ function App() {
           <Route
             path="/author/works"
             element={<AuthorWorksPage currentUser={currentUser} />}
+          />
+
+          <Route
+            path="/notifications"
+            element={<NotificationsPage currentUser={currentUser} />}
           />
 
           <Route

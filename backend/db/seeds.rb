@@ -1,6 +1,7 @@
 puts "Seeding started..."
 
 # Cleanup in sinnvoller Reihenfolge
+Notification.delete_all if defined?(Notification)
 AuthorEarning.delete_all if defined?(AuthorEarning)
 ChapterRead.delete_all if defined?(ChapterRead)
 SubscriptionPeriod.delete_all if defined?(SubscriptionPeriod)
@@ -568,6 +569,65 @@ if defined?(CommentLike)
   ].each do |user, comment|
     CommentLike.find_or_create_by!(user: user, comment: comment)
   end
+end
+
+# Notifications
+Notification.delete_all if defined?(Notification)
+
+if defined?(Notification)
+  shadow_hunter_like_comment = work_comment1
+  arcane_reply_comment = work_comment6
+  chapter_reply_comment = chapter_comment2
+
+  Notification.create!(
+    user: work_comment1.user,
+    actor: reader_without_subscription,
+    notifiable: shadow_hunter_like_comment,
+    action: "comment_like",
+    title: "Dein Kommentar wurde geliked",
+    body: "#{reader_without_subscription.username} hat deinen Kommentar geliked.",
+    read_at: nil
+  )
+
+  Notification.create!(
+    user: work_comment5.user,
+    actor: reader_without_subscription,
+    notifiable: arcane_reply_comment,
+    action: "comment_reply",
+    title: "Neue Antwort auf deinen Kommentar",
+    body: "#{reader_without_subscription.username} hat auf deinen Kommentar geantwortet.",
+    read_at: nil
+  )
+
+  Notification.create!(
+    user: chapter_comment1.user,
+    actor: author2,
+    notifiable: chapter_reply_comment,
+    action: "comment_reply",
+    title: "Neue Antwort auf deinen Kapitel-Kommentar",
+    body: "#{author2.username} hat auf deinen Kommentar geantwortet.",
+    read_at: 1.day.ago
+  )
+
+  Notification.create!(
+    user: author1,
+    actor: reader_without_subscription,
+    notifiable: shadow_hunter,
+    action: "work_comment",
+    title: "Neuer Kommentar auf deinem Werk",
+    body: "#{reader_without_subscription.username} hat Shadow System Hunter kommentiert.",
+    read_at: nil
+  )
+
+  Notification.create!(
+    user: author1,
+    actor: reader_at_limit,
+    notifiable: shadow_hunter,
+    action: "work_comment",
+    title: "Neuer Kommentar auf deinem Werk",
+    body: "#{reader_at_limit.username} hat Shadow System Hunter kommentiert.",
+    read_at: 2.hours.ago
+  )
 end
 
 puts "Seeding finished."

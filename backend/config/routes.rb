@@ -16,6 +16,17 @@ Rails.application.routes.draw do
       get "me", to: "me#show"
       get "home", to: "home#index"
 
+      resources :notifications, only: [:index] do
+        member do
+          patch :read
+        end
+
+        collection do
+          patch :read_all
+        end
+      end
+
+
       resource :subscription, only: [:show], controller: "subscription" do
         post :activate_test
       end

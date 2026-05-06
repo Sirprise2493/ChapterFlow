@@ -1,15 +1,16 @@
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import type { AuthUser } from "../lib/auth";
 
 type AppLayoutProps = {
-  isLoggedIn: boolean;
+  currentUser: AuthUser | null;
   onLogout: () => void;
 };
 
-function AppLayout({ isLoggedIn, onLogout }: AppLayoutProps) {
+function AppLayout({ currentUser, onLogout }: AppLayoutProps) {
   return (
     <>
-      <Navbar isLoggedIn={isLoggedIn} onLogout={onLogout} />
+      <Navbar currentUser={currentUser} onLogout={onLogout} />
 
       <main className="page">
         <Outlet />

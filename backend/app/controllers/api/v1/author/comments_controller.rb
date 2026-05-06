@@ -1,142 +1,132 @@
-class Api::V1::WorkCommentsController < ApplicationController
-  before_action :set_work
-  before_action :authenticate_api_user!, only: [:create, :update, :destroy, :like]
-  before_action :set_comment, only: [:update, :destroy, :like]
+class Api::V1::Author::CommentsController < ApplicationController
+  before_action :authenticate_api_user!
 
   def index
-    comments = @work
-      .comments
-      .includes(:user, :comment_likes, replies: [:user, :comment_likes])
-      .where(parent_comment_id: nil)
+    comments = author_comments_scope
+    comments = apply_work_filter(comments)
+    comments = apply_chapter_filter(comments)
+    comments = apply_type_filter(comments)
 
-    comments =
-      case params[:sort]
-      when "popular"
-        comments.left_joins(:comment_likes)
-                .group("comments.id")
-                .order("COUNT(comment_likes.id) DESC, comments.created_at DESC")
-      else
-        comments.order(created_at: :desc)
-      end
+    total_count = comments.count
+
+    page = params[:page].to_i > 0 ? params[:page].to_i : 1
+    per_page = params[:per_page].to_i > 0 ? params[:per_page].to_i : 20
+    offset = (page - 1) * per_page
+
+    items = comments
+      .includes(:user, :work, chapter: :work)
+      .order(created_at: :desc)
+      .offset(offset)
+      .limit(per_page)
 
     render json: {
-      comments: comments.map { |comment| comment_payload(comment, include_replies: true) }
+      total_count: total_count,
+      page: page,
+      per_page: per_page,
+      works: author_works_payload,
+      comments: items.map { |comment| comment_payload(comment) }
     }, status: :ok
-  end
-
-  def create
-    comment = @work.comments.new(comment_params)
-    comment.user = current_api_user
-
-    if comment.parent_comment_id.present?
-      parent_comment = @work.comments.find_by!(id: comment.parent_comment_id)
-      comment.parent_comment = parent_comment
-    end
-
-    if comment.save
-      render json: {
-        message: "Comment created",
-        comment: comment_payload(comment)
-      }, status: :created
-    else
-      render json: {
-        errors: comment.errors.full_messages
-      }, status: :unprocessable_entity
-    end
-  end
-
-  def update
-    unless owns_comment?(@comment)
-      return render json: { message: "Forbidden" }, status: :forbidden
-    end
-
-    if @comment.update(comment_params.except(:parent_comment_id))
-      render json: {
-        message: "Comment updated",
-        comment: comment_payload(@comment)
-      }, status: :ok
-    else
-      render json: {
-        errors: @comment.errors.full_messages
-      }, status: :unprocessable_entity
-    end
   end
 
   def destroy
-    unless owns_comment?(@comment) || owns_work?
-      return render json: { message: "Forbidden" }, status: :forbidden
-    end
-
-    @comment.destroy
+    comment = author_comments_scope.find(params[:id])
+    comment.destroy
 
     render json: {
       message: "Comment deleted",
-      id: @comment.id
-    }, status: :ok
-  end
-
-  def like
-    existing_like = @comment.comment_likes.find_by(user: current_api_user)
-
-    if request.delete?
-      existing_like&.destroy
-
-      return render json: {
-        message: "Comment unliked",
-        comment: comment_payload(@comment.reload)
-      }, status: :ok
-    end
-
-    @comment.comment_likes.find_or_create_by!(user: current_api_user)
-
-    render json: {
-      message: "Comment liked",
-      comment: comment_payload(@comment.reload)
+      id: comment.id
     }, status: :ok
   end
 
   private
 
-  def set_work
-    @work = Work.published.find_by!(slug: params[:work_id])
+  def author_comments_scope
+    own_work_ids = current_api_user.works.select(:id)
+    own_chapter_ids = Chapter.where(work_id: own_work_ids).select(:id)
+
+    Comment
+      .where(work_id: own_work_ids)
+      .or(Comment.where(chapter_id: own_chapter_ids))
   end
 
-  def set_comment
-    @comment = @work.comments.find(params[:id])
+  def apply_work_filter(comments)
+    return comments if params[:work_id].blank?
+
+    work_chapter_ids = Chapter
+      .where(work_id: params[:work_id])
+      .select(:id)
+
+    comments
+      .where(work_id: params[:work_id])
+      .or(comments.where(chapter_id: work_chapter_ids))
   end
 
-  def comment_params
-    params
-      .require(:comment)
-      .permit(:content, :parent_comment_id, :media_url, :media_type)
+  def apply_chapter_filter(comments)
+    return comments if params[:chapter_id].blank?
+
+    comments.where(chapter_id: params[:chapter_id])
   end
 
-  def owns_comment?(comment)
-    current_api_user && comment.user_id == current_api_user.id
+  def apply_type_filter(comments)
+    case params[:comment_type]
+    when "work"
+      comments.where.not(work_id: nil).where(chapter_id: nil)
+    when "chapter"
+      comments.where.not(chapter_id: nil)
+    else
+      comments
+    end
   end
 
-  def owns_work?
-    current_api_user && @work.author_id == current_api_user.id
+  def author_works_payload
+    current_api_user
+      .works
+      .includes(:chapters)
+      .order(:title)
+      .map do |work|
+        {
+          id: work.id,
+          slug: work.slug,
+          title: work.title,
+          chapters: work.chapters.order(:chapter_number).map do |chapter|
+            {
+              id: chapter.id,
+              chapter_number: chapter.chapter_number,
+              title: chapter.title
+            }
+          end
+        }
+      end
   end
 
-  def comment_payload(comment, include_replies: false)
+  def comment_payload(comment)
+    work = comment.work || comment.chapter&.work
+
     {
       id: comment.id,
+      comment_type: comment.work_id.present? ? "work" : "chapter",
       content: comment.content,
       media_url: comment.media_url,
       media_type: comment.media_type,
       created_at: comment.created_at,
       updated_at: comment.updated_at,
       parent_comment_id: comment.parent_comment_id,
+      replies_count: comment.replies.count,
       likes_count: comment.comment_likes.count,
-      liked_by_current_user: current_api_user ? comment.comment_likes.exists?(user_id: current_api_user.id) : false,
-      can_update: current_api_user ? comment.user_id == current_api_user.id : false,
-      can_destroy: current_api_user ? comment.user_id == current_api_user.id || @work.author_id == current_api_user.id : false,
       user: {
         id: comment.user.id,
         username: comment.user.username
       },
-      replies: include_replies ? comment.replies.order(created_at: :asc).map { |reply| comment_payload(reply) } : []
+      work: {
+        id: work.id,
+        slug: work.slug,
+        title: work.title
+      },
+      chapter: comment.chapter ? {
+        id: comment.chapter.id,
+        chapter_number: comment.chapter.chapter_number,
+        title: comment.chapter.title
+      } : nil
     }
   end
 end

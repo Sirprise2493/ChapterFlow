@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  actor: one
+  notifiable: one
+  notifiable_type: Notifiable
+  action: MyString
+  title: MyString
+  body: MyText
+  read_at: 2026-05-06 16:21:08
+
+two:
+  user: two
+  actor: two
+  notifiable: two
+  notifiable_type: Notifiable
+  action: MyString
+  title: MyString
+  body: MyText
+  read_at: 2026-05-06 16:21:08

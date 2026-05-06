@@ -26,6 +26,9 @@ function AuthorCommentsPage({ currentUser }: AuthorCommentsPageProps) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  const [commentType, setCommentType] = useState(
+    searchParams.get("comment_type") ?? ""
+  );
   const [workId, setWorkId] = useState(searchParams.get("work_id") ?? "");
   const [chapterId, setChapterId] = useState(
     searchParams.get("chapter_id") ?? ""
@@ -45,10 +48,16 @@ function AuthorCommentsPage({ currentUser }: AuthorCommentsPageProps) {
   }, [data, workId]);
 
   useEffect(() => {
-    if (!availableChapters.some((chapter) => String(chapter.id) === chapterId)) {
+    if (!chapterId) return;
+
+    const chapterStillExists = availableChapters.some(
+      (chapter) => String(chapter.id) === chapterId
+    );
+
+    if (!chapterStillExists) {
       setChapterId("");
     }
-  }, [workId, availableChapters, chapterId]);
+  }, [availableChapters, chapterId]);
 
   useEffect(() => {
     const loadComments = async () => {
@@ -62,6 +71,7 @@ function AuthorCommentsPage({ currentUser }: AuthorCommentsPageProps) {
 
       try {
         const result = await getAuthorComments({
+          comment_type: searchParams.get("comment_type") ?? undefined,
           work_id: searchParams.get("work_id") ?? undefined,
           chapter_id: searchParams.get("chapter_id") ?? undefined,
           page,
@@ -90,6 +100,7 @@ function AuthorCommentsPage({ currentUser }: AuthorCommentsPageProps) {
   const updateParams = (nextPage = 1) => {
     const nextParams = new URLSearchParams();
 
+    if (commentType) nextParams.set("comment_type", commentType);
     if (workId) nextParams.set("work_id", workId);
     if (chapterId) nextParams.set("chapter_id", chapterId);
     if (nextPage > 1) nextParams.set("page", String(nextPage));
@@ -103,6 +114,7 @@ function AuthorCommentsPage({ currentUser }: AuthorCommentsPageProps) {
   };
 
   const handleReset = () => {
+    setCommentType("");
     setWorkId("");
     setChapterId("");
     setSearchParams(new URLSearchParams());
@@ -164,8 +176,8 @@ function AuthorCommentsPage({ currentUser }: AuthorCommentsPageProps) {
           <p className="eyebrow">Kommentar-Moderation</p>
           <h1>Kommentare</h1>
           <p>
-            Verwalte Kommentare unter deinen Werken, prüfe Anhänge und entferne
-            problematische Beiträge.
+            Verwalte Kommentare unter deinen Werken und Kapiteln, prüfe Anhänge
+            und entferne problematische Beiträge.
           </p>
         </div>
 
@@ -182,6 +194,23 @@ function AuthorCommentsPage({ currentUser }: AuthorCommentsPageProps) {
           <h2>Filter</h2>
 
           <form className="works-filter-form" onSubmit={handleSubmit}>
+            <label>
+              Kommentarart
+              <select
+                value={commentType}
+                onChange={(event) => {
+                  setCommentType(event.target.value);
+                  if (event.target.value === "work") {
+                    setChapterId("");
+                  }
+                }}
+              >
+                <option value="">Alle Kommentare</option>
+                <option value="work">Werk-Kommentare</option>
+                <option value="chapter">Kapitel-Kommentare</option>
+              </select>
+            </label>
+
             <label>
               Werk
               <select
@@ -204,7 +233,7 @@ function AuthorCommentsPage({ currentUser }: AuthorCommentsPageProps) {
               Kapitel
               <select
                 value={chapterId}
-                disabled={!workId}
+                disabled={!workId || commentType === "work"}
                 onChange={(event) => setChapterId(event.target.value)}
               >
                 <option value="">Alle Kapitel</option>
@@ -248,104 +277,131 @@ function AuthorCommentsPage({ currentUser }: AuthorCommentsPageProps) {
             <>
               <div className="author-comment-list">
                 {data.comments.map((comment) => (
-                  <article key={comment.id} className="author-comment-card">
-                    <div className="author-comment-meta">
-                      <div className="comment-avatar">
-                        {comment.user.username.slice(0, 1).toUpperCase()}
-                      </div>
-
-                      <div>
-                        <strong>{comment.user.username}</strong>
-                        <span>{formatDateTime(comment.created_at)}</span>
-                      </div>
-                    </div>
-
-                    <div className="author-comment-main">
-                      <div className="author-comment-location">
-                        <Link to={`/works/${comment.work.slug}`}>
-                          {comment.work.title}
-                        </Link>
-                        <span>
-                          Kapitel {comment.chapter.chapter_number}:{" "}
-                          {comment.chapter.title || "Ohne Titel"}
-                        </span>
-                      </div>
-
-                      {comment.content && (
-                        <p className="author-comment-content">
-                          {comment.content}
-                        </p>
-                      )}
-
-                      {comment.media_url && (
-                        <div className="author-comment-media">
-                          <img
-                            src={comment.media_url}
-                            alt="Kommentar-Anhang"
-                          />
-                        </div>
-                      )}
-
-                      <div className="author-comment-stats">
-                        <span>{comment.likes_count} Likes</span>
-                        <span>{comment.replies_count} Antworten</span>
-                        {comment.parent_comment_id && (
-                          <span>Antwort-Kommentar</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="author-comment-actions">
-                      <Link
-                        to={`/chapters/${comment.chapter.id}`}
-                        className="small-link-button secondary"
-                      >
-                        Kapitel öffnen
-                      </Link>
-
-                      <button
-                        type="button"
-                        className="small-button danger"
-                        disabled={deletingId === comment.id}
-                        onClick={() => handleDeleteComment(comment)}
-                      >
-                        {deletingId === comment.id
-                          ? "Löscht..."
-                          : "Löschen"}
-                      </button>
-                    </div>
-                  </article>
+                  <AuthorCommentCard
+                    key={comment.id}
+                    comment={comment}
+                    deletingId={deletingId}
+                    onDelete={handleDeleteComment}
+                  />
                 ))}
               </div>
 
-              <div className="pagination">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={page <= 1}
-                  onClick={() => goToPage(page - 1)}
-                >
-                  Zurück
-                </button>
+              {totalPages > 1 && (
+                <div className="pagination">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={page <= 1}
+                    onClick={() => goToPage(page - 1)}
+                  >
+                    Zurück
+                  </button>
 
-                <span>
-                  {page} / {totalPages}
-                </span>
+                  <span>
+                    {page} / {totalPages}
+                  </span>
 
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={page >= totalPages}
-                  onClick={() => goToPage(page + 1)}
-                >
-                  Weiter
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={page >= totalPages}
+                    onClick={() => goToPage(page + 1)}
+                  >
+                    Weiter
+                  </button>
+                </div>
+              )}
             </>
           )}
         </section>
       </section>
     </>
+  );
+}
+
+function AuthorCommentCard({
+  comment,
+  deletingId,
+  onDelete,
+}: {
+  comment: AuthorModerationComment;
+  deletingId: number | null;
+  onDelete: (comment: AuthorModerationComment) => void;
+}) {
+  const commentTargetLabel =
+    comment.comment_type === "work" ? "Werk-Kommentar" : "Kapitel-Kommentar";
+
+  const targetUrl =
+    comment.comment_type === "work" || !comment.chapter
+      ? `/works/${comment.work.slug}`
+      : `/chapters/${comment.chapter.id}`;
+
+  return (
+    <article className="author-comment-card">
+      <div className="author-comment-meta">
+        <div className="comment-avatar">
+          {comment.user.username.slice(0, 1).toUpperCase()}
+        </div>
+
+        <div>
+          <strong>{comment.user.username}</strong>
+          <span>{formatDateTime(comment.created_at)}</span>
+        </div>
+      </div>
+
+      <div className="author-comment-main">
+        <div className="author-comment-location">
+          <div className="author-comment-type-row">
+            <span className={`comment-type-pill ${comment.comment_type}`}>
+              {commentTargetLabel}
+            </span>
+
+            {comment.parent_comment_id && (
+              <span className="comment-type-pill reply">Antwort</span>
+            )}
+          </div>
+
+          <Link to={`/works/${comment.work.slug}`}>{comment.work.title}</Link>
+
+          {comment.chapter && (
+            <span>
+              Kapitel {comment.chapter.chapter_number}:{" "}
+              {comment.chapter.title || "Ohne Titel"}
+            </span>
+          )}
+        </div>
+
+        {comment.content && (
+          <p className="author-comment-content">{comment.content}</p>
+        )}
+
+        {comment.media_url && (
+          <div className="author-comment-media">
+            <img src={comment.media_url} alt="Kommentar-Anhang" />
+          </div>
+        )}
+
+        <div className="author-comment-stats">
+          <span>{comment.likes_count} Likes</span>
+          <span>{comment.replies_count} Antworten</span>
+        </div>
+      </div>
+
+      <div className="author-comment-actions">
+        <Link to={targetUrl} className="small-link-button secondary">
+          Öffnen
+        </Link>
+
+        <button
+          type="button"
+          className="small-button danger"
+          disabled={deletingId === comment.id}
+          onClick={() => onDelete(comment)}
+        >
+          {deletingId === comment.id ? "Löscht..." : "Löschen"}
+        </button>
+      </div>
+    </article>
   );
 }
 

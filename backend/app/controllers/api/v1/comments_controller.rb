@@ -30,6 +30,8 @@ class Api::V1::CommentsController < ApplicationController
     comment.user = current_api_user
 
     if comment.save
+       NotificationCreator.comment_reply!(comment: comment) if comment.parent_comment_id.present?
+
       render json: {
         message: "Comment created",
         comment: comment_payload(comment, include_replies: false)
@@ -72,15 +74,25 @@ class Api::V1::CommentsController < ApplicationController
 
     if request.delete?
       existing_like&.destroy
-    else
-      @comment.comment_likes.find_or_create_by!(user: current_api_user)
+
+      return render json: {
+        message: "Comment unliked",
+        comment: comment_payload(@comment.reload)
+      }, status: :ok
     end
 
-    @comment.reload
+    like = @comment.comment_likes.find_or_create_by!(user: current_api_user)
+
+    if like.previously_new_record?
+      NotificationCreator.comment_like!(
+        comment: @comment,
+        actor: current_api_user
+      )
+    end
 
     render json: {
-      message: request.delete? ? "Comment unliked" : "Comment liked",
-      comment: comment_payload(@comment, include_replies: false)
+      message: "Comment liked",
+      comment: comment_payload(@comment.reload)
     }, status: :ok
   end
 

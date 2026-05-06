@@ -9,6 +9,8 @@ class Api::V1::Author::ChaptersController < ApplicationController
     if chapter.save
       refresh_chapter_count
 
+      NotificationCreator.new_chapter!(chapter: chapter)
+
       render json: {
         message: "Chapter created",
         chapter: chapter_payload(chapter)
