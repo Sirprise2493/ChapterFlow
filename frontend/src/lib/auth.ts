@@ -1,4 +1,10 @@
-const API_BASE_URL = "http://127.0.0.1:3000/api/v1";
+import { API_BASE_URL } from "./api";
+import {
+  extractApiErrorMessage,
+  parseJsonSafe,
+  type ApiErrorData,
+} from "./apiErrors";
+
 const TOKEN_STORAGE_KEY = "authToken";
 
 export type AuthUser = {
@@ -11,11 +17,6 @@ export type AuthResponse = {
   message: string;
   token?: string;
   user: AuthUser;
-};
-
-export type ErrorResponse = {
-  message?: string;
-  errors?: string[];
 };
 
 function buildAuthHeader(token: string | null): Record<string, string> {
@@ -42,17 +43,6 @@ export function getAuthHeader(): Record<string, string> {
   return buildAuthHeader(getToken());
 }
 
-async function parseJsonSafe<T>(response: Response): Promise<T | null> {
-  const text = await response.text();
-  if (!text) return null;
-
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    return null;
-  }
-}
-
 function extractToken(response: Response, data: AuthResponse | null): string | null {
   const tokenFromHeader = response.headers.get("Authorization");
   const tokenFromBody = data?.token ?? null;
@@ -61,12 +51,6 @@ function extractToken(response: Response, data: AuthResponse | null): string | n
   if (tokenFromBody) return normalizeToken(tokenFromBody);
 
   return null;
-}
-
-function extractErrorMessage(data: ErrorResponse | null, fallback: string): string {
-  if (data?.errors?.length) return data.errors.join(", ");
-  if (data?.message) return data.message;
-  return fallback;
 }
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
@@ -84,10 +68,12 @@ export async function login(email: string, password: string): Promise<AuthRespon
     }),
   });
 
-  const data = await parseJsonSafe<AuthResponse & ErrorResponse>(response);
+  const data = await parseJsonSafe<AuthResponse & ApiErrorData>(response);
 
   if (!response.ok || !data?.user) {
-    throw new Error(extractErrorMessage(data, "Login failed"));
+    throw new Error(
+      extractApiErrorMessage(response.status, data, "Login fehlgeschlagen")
+    );
   }
 
   const token = extractToken(response, data);
@@ -122,10 +108,12 @@ export async function signup(
     }),
   });
 
-  const data = await parseJsonSafe<AuthResponse & ErrorResponse>(response);
+  const data = await parseJsonSafe<AuthResponse & ApiErrorData>(response);
 
   if (!response.ok || !data?.user) {
-    throw new Error(extractErrorMessage(data, "Signup failed"));
+    throw new Error(
+      extractApiErrorMessage(response.status, data, "Registrierung fehlgeschlagen")
+    );
   }
 
   const token = extractToken(response, data);
@@ -142,7 +130,7 @@ export async function getMe(): Promise<AuthUser> {
   const token = getToken();
 
   if (!token) {
-    throw new Error("No auth token found");
+    throw new Error("Bitte melde dich an, um fortzufahren.");
   }
 
   const response = await fetch(`${API_BASE_URL}/me`, {
@@ -153,13 +141,16 @@ export async function getMe(): Promise<AuthUser> {
     },
   });
 
-  const data = await parseJsonSafe<{ user?: AuthUser } & ErrorResponse>(response);
+  const data = await parseJsonSafe<{ user?: AuthUser } & ApiErrorData>(response);
 
   if (!response.ok || !data?.user) {
     if (response.status === 401) {
       removeToken();
     }
-    throw new Error(extractErrorMessage(data, "Could not fetch current user"));
+
+    throw new Error(
+      extractApiErrorMessage(response.status, data, "Benutzer konnte nicht geladen werden")
+    );
   }
 
   return data.user;

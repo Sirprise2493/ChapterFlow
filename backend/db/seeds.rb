@@ -1,3 +1,7 @@
+unless Rails.env.development? || Rails.env.test?
+  raise "Seeds may only run in development or test."
+end
+
 puts "Seeding started..."
 
 # Cleanup in sinnvoller Reihenfolge

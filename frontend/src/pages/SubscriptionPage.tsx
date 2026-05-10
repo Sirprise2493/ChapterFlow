@@ -14,6 +14,7 @@ function SubscriptionPage({ currentUser }: SubscriptionPageProps) {
   const [error, setError] = useState("");
   const [availablePlan, setAvailablePlan] = useState<SubscriptionPlan | null>(null);
   const [activating, setActivating] = useState(false);
+  const isDevelopment = import.meta.env.DEV;
 
   useEffect(() => {
     const loadSubscription = async () => {

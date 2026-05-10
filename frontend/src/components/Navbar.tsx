@@ -92,6 +92,7 @@ function Navbar({ currentUser, onLogout }: NavbarProps) {
               )}
             </NavLink>
 
+            <NavLink to="/subscription">Subscription</NavLink>
             <NavLink to="/author/dashboard">Dashboard</NavLink>
             <NavLink to="/author/earnings">Earnings</NavLink>
             <NavLink to="/author/comments">Comments</NavLink>

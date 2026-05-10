@@ -1,6 +1,6 @@
+import { API_BASE_URL } from "./api";
+import { extractApiErrorMessage, parseJsonSafe, type ApiErrorData } from "./apiErrors";
 import { getAuthHeader } from "./auth";
-
-const API_BASE_URL = "http://127.0.0.1:3000/api/v1";
 
 export type ChapterNavigationItem = {
   id: number;
@@ -71,26 +71,15 @@ export async function getChapter(id: string): Promise<ChapterDetail> {
     },
   });
 
-  const text = await response.text();
+  const data = await parseJsonSafe<ChapterDetail & ApiErrorData>(response);
 
-  let data: any = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = null;
-  }
-
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        text ||
-        "Kapitel konnte nicht geladen werden"
+      extractApiErrorMessage(response.status, data, "Kapitel konnte nicht geladen werden")
     );
   }
 
-  return data as ChapterDetail;
+  return data;
 }
 
 export type SaveReadingProgressResponse = {
@@ -132,25 +121,19 @@ export async function saveReadingProgress(
     }
   );
 
-  const text = await response.text();
+  const data = await parseJsonSafe<SaveReadingProgressResponse & ApiErrorData>(
+    response
+  );
 
-  let data: any = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = null;
+  if (!response.ok || !data) {
+    throw new Error(
+      extractApiErrorMessage(
+        response.status,
+        data,
+        "Lesefortschritt konnte nicht gespeichert werden"
+      )
+    );
   }
 
-  if (!response.ok) {
-    const message =
-      data?.errors?.join(", ") ||
-      data?.message ||
-      text ||
-      "Lesefortschritt konnte nicht gespeichert werden";
-
-    throw new Error(message);
-  }
-
-  return data as SaveReadingProgressResponse;
+  return data;
 }
