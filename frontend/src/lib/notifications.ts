@@ -1,6 +1,6 @@
+import { API_BASE_URL } from "./api";
+import { extractApiErrorMessage, parseJsonSafe, type ApiErrorData } from "./apiErrors";
 import { getAuthHeader } from "./auth";
-
-const API_BASE_URL = "http://127.0.0.1:3000/api/v1";
 
 export type NotificationActor = {
   id: number;
@@ -50,10 +50,12 @@ export type NotificationsResponse = {
   notifications: AppNotification[];
 };
 
-export async function getNotifications(params: {
-  page?: number;
-  per_page?: number;
-} = {}): Promise<NotificationsResponse> {
+export async function getNotifications(
+  params: {
+    page?: number;
+    per_page?: number;
+  } = {}
+): Promise<NotificationsResponse> {
   const searchParams = new URLSearchParams();
 
   if (params.page) searchParams.set("page", String(params.page));
@@ -72,17 +74,17 @@ export async function getNotifications(params: {
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<NotificationsResponse & ApiErrorData>(
+    response
+  );
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Notifications konnten nicht geladen werden"
+      extractApiErrorMessage(response.status, data, "Notifications konnten nicht geladen werden")
     );
   }
 
-  return data as NotificationsResponse;
+  return data;
 }
 
 export async function markNotificationAsRead(
@@ -99,17 +101,21 @@ export async function markNotificationAsRead(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; notification: AppNotification } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
+      extractApiErrorMessage(
+        response.status,
+        data,
         "Notification konnte nicht gelesen markiert werden"
+      )
     );
   }
 
-  return data as { message: string; notification: AppNotification };
+  return data;
 }
 
 export async function markAllNotificationsAsRead(): Promise<{
@@ -124,15 +130,19 @@ export async function markAllNotificationsAsRead(): Promise<{
     },
   });
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; unread_count: number } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
+      extractApiErrorMessage(
+        response.status,
+        data,
         "Notifications konnten nicht gelesen markiert werden"
+      )
     );
   }
 
-  return data as { message: string; unread_count: number };
+  return data;
 }

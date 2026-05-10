@@ -1,6 +1,6 @@
+import { API_BASE_URL } from "./api";
+import { extractApiErrorMessage, parseJsonSafe, type ApiErrorData } from "./apiErrors";
 import { getAuthHeader } from "./auth";
-
-const API_BASE_URL = "http://127.0.0.1:3000/api/v1";
 
 export type WorkComment = {
   id: number;
@@ -47,17 +47,17 @@ export async function getWorkComments(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<WorkCommentsResponse & ApiErrorData>(
+    response
+  );
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Kommentare konnten nicht geladen werden"
+      extractApiErrorMessage(response.status, data, "Kommentare konnten nicht geladen werden")
     );
   }
 
-  return data as WorkCommentsResponse;
+  return data;
 }
 
 export async function createWorkComment(
@@ -76,17 +76,17 @@ export async function createWorkComment(
     }),
   });
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; comment: WorkComment } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Kommentar konnte nicht erstellt werden"
+      extractApiErrorMessage(response.status, data, "Kommentar konnte nicht erstellt werden")
     );
   }
 
-  return data as { message: string; comment: WorkComment };
+  return data;
 }
 
 export async function updateWorkComment(
@@ -109,17 +109,17 @@ export async function updateWorkComment(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; comment: WorkComment } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Kommentar konnte nicht gespeichert werden"
+      extractApiErrorMessage(response.status, data, "Kommentar konnte nicht gespeichert werden")
     );
   }
 
-  return data as { message: string; comment: WorkComment };
+  return data;
 }
 
 export async function deleteWorkComment(
@@ -137,17 +137,17 @@ export async function deleteWorkComment(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<{ message: string; id: number } & ApiErrorData>(
+    response
+  );
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Kommentar konnte nicht gelöscht werden"
+      extractApiErrorMessage(response.status, data, "Kommentar konnte nicht gelöscht werden")
     );
   }
 
-  return data as { message: string; id: number };
+  return data;
 }
 
 export async function likeWorkComment(
@@ -165,13 +165,17 @@ export async function likeWorkComment(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; comment: WorkComment } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
-    throw new Error(data?.message || "Like konnte nicht gespeichert werden");
+  if (!response.ok || !data) {
+    throw new Error(
+      extractApiErrorMessage(response.status, data, "Like konnte nicht gespeichert werden")
+    );
   }
 
-  return data as { message: string; comment: WorkComment };
+  return data;
 }
 
 export async function unlikeWorkComment(
@@ -189,11 +193,15 @@ export async function unlikeWorkComment(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; comment: WorkComment } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
-    throw new Error(data?.message || "Like konnte nicht entfernt werden");
+  if (!response.ok || !data) {
+    throw new Error(
+      extractApiErrorMessage(response.status, data, "Like konnte nicht entfernt werden")
+    );
   }
 
-  return data as { message: string; comment: WorkComment };
+  return data;
 }

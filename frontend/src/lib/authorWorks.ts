@@ -1,6 +1,12 @@
+import { API_BASE_URL } from "./api";
+import {
+  extractApiErrorMessage,
+  parseJsonSafe,
+  type ApiErrorData,
+} from "./apiErrors";
 import { getAuthHeader } from "./auth";
 
-const API_BASE_URL = "http://127.0.0.1:3000/api/v1";
+export { uploadCoverToCloudinary } from "./cloudinary";
 
 export type AuthorGenre = {
   id: number;
@@ -54,11 +60,19 @@ export async function getGenres(): Promise<GenresResponse> {
     },
   });
 
-  if (!response.ok) {
-    throw new Error("Genres konnten nicht geladen werden");
+  const data = await parseJsonSafe<GenresResponse & ApiErrorData>(response);
+
+  if (!response.ok || !data) {
+    throw new Error(
+      extractApiErrorMessage(
+        response.status,
+        data,
+        "Genres konnten nicht geladen werden"
+      )
+    );
   }
 
-  return response.json() as Promise<GenresResponse>;
+  return data;
 }
 
 export async function getAuthorWorks(): Promise<AuthorWorksResponse> {
@@ -70,17 +84,21 @@ export async function getAuthorWorks(): Promise<AuthorWorksResponse> {
     },
   });
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<AuthorWorksResponse & ApiErrorData>(
+    response
+  );
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.errors?.join(", ") ||
-        data?.message ||
+      extractApiErrorMessage(
+        response.status,
+        data,
         "Deine Werke konnten nicht geladen werden"
+      )
     );
   }
 
-  return data as AuthorWorksResponse;
+  return data;
 }
 
 export async function createAuthorWork(
@@ -98,49 +116,21 @@ export async function createAuthorWork(
     }),
   });
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; work: AuthorWork } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.errors?.join(", ") ||
-        data?.message ||
+      extractApiErrorMessage(
+        response.status,
+        data,
         "Werk konnte nicht erstellt werden"
+      )
     );
   }
 
-  return data as { message: string; work: AuthorWork };
-}
-
-export async function uploadCoverToCloudinary(file: File): Promise<string> {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error("Cloudinary ENV Variablen fehlen");
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
-  formData.append("folder", "chapterflow/covers");
-
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-    {
-      method: "POST",
-      body: formData,
-    }
-  );
-
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(
-      data?.error?.message || "Cover konnte nicht hochgeladen werden"
-    );
-  }
-
-  return data.secure_url as string;
+  return data;
 }
 
 export type AuthorChapter = {
@@ -168,17 +158,21 @@ export async function getAuthorWork(
     },
   });
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { work: AuthorWorkDetail } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.errors?.join(", ") ||
-        data?.message ||
+      extractApiErrorMessage(
+        response.status,
+        data,
         "Werk konnte nicht geladen werden"
+      )
     );
   }
 
-  return data as { work: AuthorWorkDetail };
+  return data;
 }
 
 export async function updateAuthorWork(
@@ -197,17 +191,21 @@ export async function updateAuthorWork(
     }),
   });
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; work: AuthorWork } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.errors?.join(", ") ||
-        data?.message ||
+      extractApiErrorMessage(
+        response.status,
+        data,
         "Werk konnte nicht aktualisiert werden"
+      )
     );
   }
 
-  return data as { message: string; work: AuthorWork };
+  return data;
 }
 
 export type ChapterPayload = {
@@ -236,17 +234,21 @@ export async function createAuthorChapter(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; chapter: AuthorChapter } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.errors?.join(", ") ||
-        data?.message ||
+      extractApiErrorMessage(
+        response.status,
+        data,
         "Kapitel konnte nicht erstellt werden"
+      )
     );
   }
 
-  return data as { message: string; chapter: AuthorChapter };
+  return data;
 }
 
 export async function updateAuthorChapter(
@@ -269,17 +271,21 @@ export async function updateAuthorChapter(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; chapter: AuthorChapter } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.errors?.join(", ") ||
-        data?.message ||
+      extractApiErrorMessage(
+        response.status,
+        data,
         "Kapitel konnte nicht aktualisiert werden"
+      )
     );
   }
 
-  return data as { message: string; chapter: AuthorChapter };
+  return data;
 }
 
 export async function deleteAuthorChapter(
@@ -297,15 +303,19 @@ export async function deleteAuthorChapter(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<{ message: string } & ApiErrorData>(
+    response
+  );
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.errors?.join(", ") ||
-        data?.message ||
+      extractApiErrorMessage(
+        response.status,
+        data,
         "Kapitel konnte nicht gelöscht werden"
+      )
     );
   }
 
-  return data as { message: string };
+  return data;
 }

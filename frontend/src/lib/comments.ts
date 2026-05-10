@@ -1,6 +1,6 @@
+import { API_BASE_URL } from "./api";
+import { extractApiErrorMessage, parseJsonSafe, type ApiErrorData } from "./apiErrors";
 import { getAuthHeader } from "./auth";
-
-const API_BASE_URL = "http://127.0.0.1:3000/api/v1";
 
 export type ChapterComment = {
   id: number;
@@ -38,24 +38,23 @@ export async function getChapterComments(
   const response = await fetch(
     `${API_BASE_URL}/chapters/${chapterId}/comments?sort=${sort}`,
     {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      ...getAuthHeader(),
-    },
-  });
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        ...getAuthHeader(),
+      },
+    }
+  );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<CommentsResponse & ApiErrorData>(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Kommentare konnten nicht geladen werden"
+      extractApiErrorMessage(response.status, data, "Kommentare konnten nicht geladen werden")
     );
   }
 
-  return data as CommentsResponse;
+  return data;
 }
 
 export async function createChapterComment(
@@ -74,17 +73,17 @@ export async function createChapterComment(
     }),
   });
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; comment: ChapterComment } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Kommentar konnte nicht erstellt werden"
+      extractApiErrorMessage(response.status, data, "Kommentar konnte nicht erstellt werden")
     );
   }
 
-  return data as { message: string; comment: ChapterComment };
+  return data;
 }
 
 export async function updateChapterComment(
@@ -107,17 +106,17 @@ export async function updateChapterComment(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; comment: ChapterComment } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Kommentar konnte nicht aktualisiert werden"
+      extractApiErrorMessage(response.status, data, "Kommentar konnte nicht aktualisiert werden")
     );
   }
 
-  return data as { message: string; comment: ChapterComment };
+  return data;
 }
 
 export async function deleteChapterComment(
@@ -135,17 +134,17 @@ export async function deleteChapterComment(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<{ message: string; id: number } & ApiErrorData>(
+    response
+  );
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Kommentar konnte nicht gelöscht werden"
+      extractApiErrorMessage(response.status, data, "Kommentar konnte nicht gelöscht werden")
     );
   }
 
-  return data as { message: string; id: number };
+  return data;
 }
 
 export async function likeChapterComment(
@@ -163,17 +162,17 @@ export async function likeChapterComment(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; comment: ChapterComment } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Kommentar konnte nicht geliked werden"
+      extractApiErrorMessage(response.status, data, "Kommentar konnte nicht geliked werden")
     );
   }
 
-  return data as { message: string; comment: ChapterComment };
+  return data;
 }
 
 export async function unlikeChapterComment(
@@ -191,15 +190,15 @@ export async function unlikeChapterComment(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; comment: ChapterComment } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Like konnte nicht entfernt werden"
+      extractApiErrorMessage(response.status, data, "Like konnte nicht entfernt werden")
     );
   }
 
-  return data as { message: string; comment: ChapterComment };
+  return data;
 }

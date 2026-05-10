@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://127.0.0.1:3000/api/v1";
+import { API_BASE_URL } from "./api";
+import { extractApiErrorMessage, parseJsonSafe, type ApiErrorData } from "./apiErrors";
 
 export type HomeWork = {
   id: number;
@@ -51,9 +52,13 @@ export async function getHomeData(): Promise<HomeResponse> {
     },
   });
 
-  if (!response.ok) {
-    throw new Error("Home-Daten konnten nicht geladen werden");
+  const data = await parseJsonSafe<HomeResponse & ApiErrorData>(response);
+
+  if (!response.ok || !data) {
+    throw new Error(
+      extractApiErrorMessage(response.status, data, "Home-Daten konnten nicht geladen werden")
+    );
   }
 
-  return response.json() as Promise<HomeResponse>;
+  return data;
 }

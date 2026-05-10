@@ -1,6 +1,10 @@
+import { API_BASE_URL } from "./api";
+import {
+  extractApiErrorMessage,
+  parseJsonSafe,
+  type ApiErrorData,
+} from "./apiErrors";
 import { getAuthHeader } from "./auth";
-
-const API_BASE_URL = "http://127.0.0.1:3000/api/v1";
 
 export type WorkGenre = {
   id: number;
@@ -82,11 +86,19 @@ export async function getWork(slug: string): Promise<WorkDetail> {
     },
   });
 
-  if (!response.ok) {
-    throw new Error("Werk konnte nicht geladen werden");
+  const data = await parseJsonSafe<WorkDetail & ApiErrorData>(response);
+
+  if (!response.ok || !data) {
+    throw new Error(
+      extractApiErrorMessage(
+        response.status,
+        data,
+        "Werk konnte nicht geladen werden"
+      )
+    );
   }
 
-  return response.json() as Promise<WorkDetail>;
+  return data;
 }
 
 export async function trackWorkView(slug: string): Promise<number> {
@@ -97,11 +109,20 @@ export async function trackWorkView(slug: string): Promise<number> {
     },
   });
 
-  if (!response.ok) {
-    throw new Error("View konnte nicht gezählt werden");
+  const data = await parseJsonSafe<
+    { views_count: number } & ApiErrorData
+  >(response);
+
+  if (!response.ok || !data) {
+    throw new Error(
+      extractApiErrorMessage(
+        response.status,
+        data,
+        "View konnte nicht gezählt werden"
+      )
+    );
   }
 
-  const data = (await response.json()) as { views_count: number };
   return data.views_count;
 }
 
@@ -123,28 +144,19 @@ export async function rateWork(
     }),
   });
 
-  const text = await response.text();
+  const data = await parseJsonSafe<RatingResponse & ApiErrorData>(response);
 
-  let data: any = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = null;
+  if (!response.ok || !data) {
+    throw new Error(
+      extractApiErrorMessage(
+        response.status,
+        data,
+        `Rating konnte nicht gespeichert werden. Status: ${response.status}`
+      )
+    );
   }
 
-  if (!response.ok) {
-    const message =
-      data?.errors?.join(", ") ||
-      data?.error ||
-      data?.message ||
-      text ||
-      `Rating konnte nicht gespeichert werden. Status: ${response.status}`;
-
-    throw new Error(message);
-  }
-
-  return data as RatingResponse;
+  return data;
 }
 
 export type LibraryWork = Omit<WorkDetail, "chapters" | "in_library"> & {
@@ -164,27 +176,19 @@ export async function getLibrary(): Promise<LibraryResponse> {
     },
   });
 
-  const text = await response.text();
+  const data = await parseJsonSafe<LibraryResponse & ApiErrorData>(response);
 
-  let data: any = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = null;
+  if (!response.ok || !data) {
+    throw new Error(
+      extractApiErrorMessage(
+        response.status,
+        data,
+        "Bibliothek konnte nicht geladen werden"
+      )
+    );
   }
 
-  if (!response.ok) {
-    const message =
-      data?.errors?.join(", ") ||
-      data?.message ||
-      text ||
-      "Bibliothek konnte nicht geladen werden";
-
-    throw new Error(message);
-  }
-
-  return data as LibraryResponse;
+  return data;
 }
 
 export async function addWorkToLibrary(slug: string): Promise<boolean> {
@@ -196,27 +200,21 @@ export async function addWorkToLibrary(slug: string): Promise<boolean> {
     },
   });
 
-  const text = await response.text();
+  const data = await parseJsonSafe<
+    { in_library?: boolean } & ApiErrorData
+  >(response);
 
-  let data: any = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = null;
+  if (!response.ok || !data) {
+    throw new Error(
+      extractApiErrorMessage(
+        response.status,
+        data,
+        "Werk konnte nicht zur Bibliothek hinzugefügt werden"
+      )
+    );
   }
 
-  if (!response.ok) {
-    const message =
-      data?.errors?.join(", ") ||
-      data?.message ||
-      text ||
-      "Werk konnte nicht zur Bibliothek hinzugefügt werden";
-
-    throw new Error(message);
-  }
-
-  return Boolean(data?.in_library);
+  return Boolean(data.in_library);
 }
 
 export async function removeWorkFromLibrary(slug: string): Promise<boolean> {
@@ -228,27 +226,21 @@ export async function removeWorkFromLibrary(slug: string): Promise<boolean> {
     },
   });
 
-  const text = await response.text();
+  const data = await parseJsonSafe<
+    { in_library?: boolean } & ApiErrorData
+  >(response);
 
-  let data: any = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = null;
+  if (!response.ok || !data) {
+    throw new Error(
+      extractApiErrorMessage(
+        response.status,
+        data,
+        "Werk konnte nicht aus der Bibliothek entfernt werden"
+      )
+    );
   }
 
-  if (!response.ok) {
-    const message =
-      data?.errors?.join(", ") ||
-      data?.message ||
-      text ||
-      "Werk konnte nicht aus der Bibliothek entfernt werden";
-
-    throw new Error(message);
-  }
-
-  return Boolean(data?.in_library);
+  return Boolean(data.in_library);
 }
 
 export type WorksIndexParams = {
@@ -321,15 +313,19 @@ export async function getWorks(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<WorksIndexResponse & ApiErrorData>(
+    response
+  );
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
+      extractApiErrorMessage(
+        response.status,
+        data,
         "Werke konnten nicht geladen werden"
+      )
     );
   }
 
-  return data as WorksIndexResponse;
+  return data;
 }

@@ -1,6 +1,6 @@
+import { API_BASE_URL } from "./api";
+import { extractApiErrorMessage, parseJsonSafe, type ApiErrorData } from "./apiErrors";
 import { getAuthHeader } from "./auth";
-
-const API_BASE_URL = "http://127.0.0.1:3000/api/v1";
 
 export type AuthorEarningsWork = {
   id: number;
@@ -71,15 +71,15 @@ export async function getAuthorEarnings(
     }
   );
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<AuthorEarningsResponse & ApiErrorData>(
+    response
+  );
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Earnings konnten nicht geladen werden"
+      extractApiErrorMessage(response.status, data, "Earnings konnten nicht geladen werden")
     );
   }
 
-  return data as AuthorEarningsResponse;
+  return data;
 }

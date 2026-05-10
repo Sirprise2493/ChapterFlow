@@ -1,6 +1,6 @@
+import { API_BASE_URL } from "./api";
+import { extractApiErrorMessage, parseJsonSafe, type ApiErrorData } from "./apiErrors";
 import { getAuthHeader } from "./auth";
-
-const API_BASE_URL = "http://127.0.0.1:3000/api/v1";
 
 export type SubscriptionPlan = {
   id: number;
@@ -52,17 +52,15 @@ export async function getSubscription(): Promise<SubscriptionResponse> {
     },
   });
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<SubscriptionResponse & ApiErrorData>(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Abo konnte nicht geladen werden"
+      extractApiErrorMessage(response.status, data, "Abo konnte nicht geladen werden")
     );
   }
 
-  return data as SubscriptionResponse;
+  return data;
 }
 
 export async function activateTestSubscription(): Promise<{
@@ -77,18 +75,15 @@ export async function activateTestSubscription(): Promise<{
     },
   });
 
-  const data = await response.json().catch(() => null);
+  const data = await parseJsonSafe<
+    { message: string; subscription: ActiveSubscription } & ApiErrorData
+  >(response);
 
-  if (!response.ok) {
+  if (!response.ok || !data) {
     throw new Error(
-      data?.message ||
-        data?.errors?.join(", ") ||
-        "Test-Abo konnte nicht aktiviert werden"
+      extractApiErrorMessage(response.status, data, "Test-Abo konnte nicht aktiviert werden")
     );
   }
 
-  return data as {
-    message: string;
-    subscription: ActiveSubscription;
-  };
+  return data;
 }

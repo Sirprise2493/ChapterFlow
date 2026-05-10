@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 
-import { getMe, logout } from "./lib/auth";
+import { getMe, logout, removeToken } from "./lib/auth";
 import type { AuthUser } from "./lib/auth";
 
 import AppLayout from "./layouts/AppLayout";
@@ -66,7 +66,7 @@ function App() {
     } catch (err) {
       console.warn("Backend logout failed, clearing local session anyway", err);
     } finally {
-      localStorage.removeItem("authToken");
+      removeToken();
       setCurrentUser(null);
       setMessage("Logged out successfully");
     }
